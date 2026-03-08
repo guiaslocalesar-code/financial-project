@@ -19,4 +19,5 @@ class Service(Base):
     company = relationship("Company", back_populates="services")
     client_services = relationship("ClientService", back_populates="service")
     invoice_items = relationship("InvoiceItem", back_populates="service")
+    income_budgets = relationship("IncomeBudget", back_populates="service")
     transactions = relationship("Transaction", back_populates="service")

@@ -40,6 +40,7 @@
 - **1 Company → N ExpenseTypes** (`expense_types.company_id`)
 - **1 Company → N ExpenseCategories** (`expense_categories.company_id`)
 - **1 Company → N ExpenseBudgets** (`expense_budgets.company_id`)
+- **1 Company → N IncomeBudgets** (`income_budgets.company_id`)
 - **1 Company → N Transactions** (`transactions.company_id`)
 
 ---
@@ -70,6 +71,7 @@
 - **N Clients → 1 Company** (`company_id` FK)
 - **1 Client → N ClientServices** (`client_services.client_id`)
 - **1 Client → N Invoices** (`invoices.client_id`)
+- **1 Client → N IncomeBudgets** (`income_budgets.client_id`)
 - **1 Client → N Transactions** (`transactions.client_id`) — solo en ingresos
 
 ### Lógica de tipo de factura
@@ -100,6 +102,7 @@
 - **N Services → 1 Company** (`company_id` FK)
 - **1 Service → N ClientServices** (`client_services.service_id`)
 - **1 Service → N InvoiceItems** (`invoice_items.service_id`)
+- **1 Service → N IncomeBudgets** (`income_budgets.service_id`)
 - **1 Service → N Transactions** (`transactions.service_id`)
 
 ---
@@ -284,7 +287,44 @@ Todos los registros con `is_recurring = true` al cierre de cada mes generan copi
 
 ---
 
-## 💰 TABLA 10: `transactions`
+## 📅 TABLA 10: `income_budgets`
+**Propósito:** Presupuesto mensual de ingresos esperados (cobranza planificada). El usuario carga los cobros esperados mes a mes o usa facturación recurrente. Funciona en paralelo a `expense_budgets`.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `client_id` | UUID | ❌ | — | FK → `clients.id` |
+| `service_id` | UUID | ❌ | — | FK → `services.id` |
+| `budgeted_amount` | NUMERIC(12,2) | ❌ | — | Monto original a cobrar |
+| `actual_amount` | NUMERIC(12,2) | ✅ | NULL | Monto real cobrado |
+| `planned_date` | DATE | ❌ | — | Fecha estimada de cobro |
+| `period_month` | INTEGER | ❌ | — | Mes del período |
+| `period_year` | INTEGER | ❌ | — | Año del período |
+| `is_recurring` | BOOLEAN | ❌ | `true` | Si `true`, se clona para el próximo mes |
+| `status` | ENUM | ❌ | `pending` | Estado: `pending`, `collected`, `cancelled` |
+| `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (se llena al cobrar) |
+| `notes` | TEXT | ✅ | NULL | Notas internas |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+### Relaciones
+- **N IncomeBudgets → 1 Company** (`company_id` FK)
+- **N IncomeBudgets → 1 Client** (`client_id` FK)
+- **N IncomeBudgets → 1 Service** (`service_id` FK)
+- **1 IncomeBudget → 1 Transaction** (`transaction_id` FK, al cobrar)
+
+### Flujo de estados
+```
+pending → [POST /income-budgets/{id}/collect] → collected  (crea Transaction automáticamente)
+pending → cancelled
+```
+
+---
+
+## 💰 TABLA 11: `transactions`
 **Propósito:** Registro central de todos los movimientos de dinero **reales** (ingresos y egresos efectivamente cobrados/pagados). Es la fuente de verdad para el dashboard, cálculo de rentabilidad, flujo de caja y balance. Cada peso que entró o salió debe estar aquí.
 
 ### Columnas
@@ -296,6 +336,7 @@ Todos los registros con `is_recurring = true` al cierre de cada mes generan copi
 | `client_id` | UUID | ✅ | NULL | FK → `clients.id` (solo en ingresos) |
 | `invoice_id` | UUID | ✅ | NULL | FK → `invoices.id` (si el ingreso viene de una factura) |
 | `budget_id` | UUID | ✅ | NULL | FK → `expense_budgets.id` (si el egreso vino del presupuesto) |
+| `income_budget_id` | UUID | ✅ | NULL | FK → `income_budgets.id` (si el ingreso vino de cobranza presupuestada) |
 | `service_id` | UUID | ✅ | NULL | FK → `services.id` (para métricas de rentabilidad) |
 | `expense_type_id` | UUID | ✅ | NULL | FK → `expense_types.id` (solo en egresos) |
 | `expense_category_id` | UUID | ✅ | NULL | FK → `expense_categories.id` (solo en egresos) |
@@ -316,6 +357,7 @@ Todos los registros con `is_recurring = true` al cierre de cada mes generan copi
 - **N Transactions → 1 Client** (`client_id` FK, nullable)
 - **N Transactions → 1 Invoice** (`invoice_id` FK, nullable)
 - **N Transactions → 1 ExpenseBudget** (`budget_id` FK, nullable)
+- **N Transactions → 1 IncomeBudget** (`income_budget_id` FK, nullable)
 - **N Transactions → 1 Service** (`service_id` FK, nullable)
 - **N Transactions → 1 ExpenseType** (`expense_type_id` FK, nullable)
 - **N Transactions → 1 ExpenseCategory** (`expense_category_id` FK, nullable)
@@ -336,10 +378,13 @@ companies (1)
 │   └── expense_categories (N)
 │       └── expense_budgets (N)
 │           └── transactions (1) [cuando se paga]
+├── income_budgets (N)
+│   └── transactions (1) [cuando se cobra]
 └── transactions (N)
     ├── → client (nullable)
     ├── → invoice (nullable)
     ├── → expense_budget (nullable)
+    ├── → income_budget (nullable)
     ├── → service (nullable)
     ├── → expense_type (nullable)
     └── → expense_category (nullable)
@@ -357,6 +402,7 @@ companies (1)
 | `invoicestatus` | `DRAFT`, `EMITTED`, `CANCELLED` |
 | `appliesto` | `BUDGETED`, `UNBUDGETED`, `BOTH` |
 | `budgetstatus` | `PENDING`, `PAID`, `CANCELLED` |
+| `incomebudgetstatus` | `PENDING`, `COLLECTED`, `CANCELLED` |
 | `transactiontype` | `INCOME`, `EXPENSE` |
 | `expenseorigin` | `BUDGETED`, `UNBUDGETED` |
 | `paymentmethod` | `CASH`, `TRANSFER`, `CHECK`, `CARD`, `OTHER` |
@@ -379,6 +425,8 @@ companies (1)
 | POST | `/expenses/categories` | `expense_categories` |
 | POST | `/budgets/` | `expense_budgets` |
 | POST | `/budgets/{id}/pay` | `expense_budgets`, `transactions` |
+| POST | `/income-budgets/` | `income_budgets` |
+| POST | `/income-budgets/{id}/collect` | `income_budgets`, `transactions` |
 | GET | `/transactions/` | `transactions` |
 | GET | `/dashboard/summary` | `transactions`, `expense_budgets` |
 | GET | `/dashboard/profitability` | `invoice_items`, `transactions` |

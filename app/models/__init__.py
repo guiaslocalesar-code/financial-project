@@ -7,4 +7,5 @@ from app.models.invoice_item import InvoiceItem
 from app.models.expense_type import ExpenseType
 from app.models.expense_category import ExpenseCategory
 from app.models.expense_budget import ExpenseBudget
+from app.models.income_budget import IncomeBudget
 from app.models.transaction import Transaction

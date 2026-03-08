@@ -27,4 +27,5 @@ class Client(Base):
     company = relationship("Company", back_populates="clients")
     services = relationship("ClientService", back_populates="client")
     invoices = relationship("Invoice", back_populates="client")
+    income_budgets = relationship("IncomeBudget", back_populates="client")
     transactions = relationship("Transaction", back_populates="client")

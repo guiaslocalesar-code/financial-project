@@ -26,4 +26,5 @@ class Company(Base):
     expense_types = relationship("ExpenseType", back_populates="company")
     expense_categories = relationship("ExpenseCategory", back_populates="company")
     expense_budgets = relationship("ExpenseBudget", back_populates="company")
+    income_budgets = relationship("IncomeBudget", back_populates="company")
     transactions = relationship("Transaction", back_populates="company")

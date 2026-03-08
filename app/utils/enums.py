@@ -31,6 +31,11 @@ class BudgetStatus(str, enum.Enum):
     PAID = "paid"
     CANCELLED = "cancelled"
 
+class IncomeBudgetStatus(str, enum.Enum):
+    PENDING = "pending"
+    COLLECTED = "collected"
+    CANCELLED = "cancelled"
+
 class TransactionType(str, enum.Enum):
     INCOME = "income"
     EXPENSE = "expense"
