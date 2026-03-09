@@ -45,9 +45,10 @@ class MetricoolService:
             logger.warning(f"Error normalizing url {url}: {e}")
             return url
 
-    async def create_post(self, payload: Dict[str, Any], blog_id: str) -> Dict[str, Any]:
+    async def create_post(self, payload: Dict[str, Any], blog_id: str, publication_type: str = "POST") -> Dict[str, Any]:
         """
         Create a scheduler post in Metricool.
+        publication_type can be 'POST' or 'STORY'.
         """
         url = self.BASE_URL
         params = {
@@ -68,11 +69,18 @@ class MetricoolService:
             "autoPublish": payload.get("autoPublish", True),
             "draft": payload.get("draft", False),
             "saveExternalMediaFiles": True,
-            # Defaults for consistency
-            "instagramData": {"type": "POST", "autoPublish": True},
-            "facebookData": {"type": "POST"},
-            "twitterData": {"type": "POST"}
         }
+        
+        # Inject network specific configurations based on publication type
+        if publication_type.upper() == "STORY":
+            body["instagramData"] = {"type": "STORY", "autoPublish": True}
+            body["facebookData"] = {"type": "STORY"}
+            # Fallback for others if needed, though usually omitted for stories
+        else:
+            # Default POST behavior
+            body["instagramData"] = {"type": "POST", "autoPublish": True}
+            body["facebookData"] = {"type": "POST"}
+            body["twitterData"] = {"type": "POST"}
 
         async with httpx.AsyncClient() as client:
             try:

@@ -18,6 +18,7 @@ class Config:
     # Sheets configuration
     PLANNING_SHEET_ID = os.getenv("PLANNING_SHEET_ID", "1PMvDlydPAJFb_NJo0TgLlHePH0vIZtfS4RK2GVP6bYY")
     BRANDS_SHEET_ID = os.getenv("BRANDS_SHEET_ID", "1Yt0gJ-BxldHTcgSWXLdY7XPPxs0lmDf5lchJWmMprgA")
+    STORIES_SHEET_NAME = os.getenv("STORIES_SHEET_NAME", "planificacion_historia")
     
     # Secrets management
     _client: Optional[secretmanager.SecretManagerServiceClient] = None

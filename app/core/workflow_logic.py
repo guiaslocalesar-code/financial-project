@@ -21,27 +21,26 @@ class WorkflowLogic:
         'TikTok': 'TIKTOK', 'Youtube': 'YOUTUBE', 'Threads': 'THREADS', 'Bluesky': 'BLUESKY'
     }
 
-    async def run_migration(self):
-        """Execute the full workflow."""
-        logger.info("Starting migration run...")
+    async def run_workflow(self, sheet_name: str = "planificacion_data", publication_type: str = "POST"):
+        """Execute the full workflow for a specific sheet and publication type."""
+        logger.info(f"Starting migration run for {publication_type} on sheet {sheet_name}...")
         
         # 1. Fetch planning data
-        # Assuming sheet name is 'planificacion_data' and ID is provided
         planning_id = config.PLANNING_SHEET_ID
-        planning_range = "'planificacion_data'!A:Z" # Broad range to get all columns
+        planning_range = f"'{sheet_name}'!A:Z" # Broad range to get all columns
         
         raw_rows = sheets_service.read_sheet(planning_id, planning_range)
         if not raw_rows:
-            logger.info("No rows found in planning sheet.")
+            logger.info(f"No rows found in planning sheet ({sheet_name}).")
             return []
 
         # 2. Filter pending rows
         pending_items = self._filter_pending_rows(raw_rows)
         if not pending_items:
-            logger.info("No pending rows to process.")
+            logger.info(f"No pending rows to process for {publication_type}.")
             return []
 
-        logger.info(f"Processing {len(pending_items)} pending items.")
+        logger.info(f"Processing {len(pending_items)} pending items for {publication_type}.")
         
         # 3. Load brands lookup
         brands_id = config.BRANDS_SHEET_ID
@@ -50,7 +49,7 @@ class WorkflowLogic:
         
         results = []
         for item in pending_items:
-            result = await self._process_single_item(item, brands_data, planning_id)
+            result = await self._process_single_item(item, brands_data, planning_id, sheet_name, publication_type)
             results.append(result)
             
         return results
@@ -98,12 +97,12 @@ class WorkflowLogic:
             pending.append(row)
         return pending
 
-    async def _process_single_item(self, row: Dict[str, Any], brands_data: List[Dict[str, Any]], planning_id: str) -> Dict[str, Any]:
+    async def _process_single_item(self, row: Dict[str, Any], brands_data: List[Dict[str, Any]], planning_id: str, sheet_name: str, publication_type: str) -> Dict[str, Any]:
         """Process a single row from the spreadsheet."""
         client_name = row.get("Cliente", "")
         row_id = row.get("ID")
         
-        logger.info(f"Processing row ID {row_id} for client '{client_name}'")
+        logger.info(f"Processing row ID {row_id} for client '{client_name}' ({publication_type})")
 
         # 1. Look up brand data
         brand_info = next((b for b in brands_data if b.get("Empresa", "").strip() == client_name.strip()), None)
@@ -145,17 +144,17 @@ class WorkflowLogic:
         }
 
         # 5. Call Metricool API
-        api_result = await metricool_service.create_post(payload, blog_id)
+        api_result = await metricool_service.create_post(payload, blog_id, publication_type)
         
         # 6. Update spreadsheet
-        update_row_idx = sheets_service.find_row_by_id(planning_id, "planificacion_data", "ID", row_id)
+        update_row_idx = sheets_service.find_row_by_id(planning_id, sheet_name, "ID", row_id)
         if update_row_idx:
             status_val = "Publicado en Metricool" if api_result["success"] else "Error en Publicación"
             for net in active_nets:
-                sheets_service.update_cell(planning_id, "planificacion_data", update_row_idx, net, status_val)
+                sheets_service.update_cell(planning_id, sheet_name, update_row_idx, net, status_val)
             
             if api_result["success"] and api_result.get("id"):
-                sheets_service.update_cell(planning_id, "planificacion_data", update_row_idx, "ID_Metricool_Post", api_result["id"])
+                sheets_service.update_cell(planning_id, sheet_name, update_row_idx, "ID_Metricool_Post", api_result["id"])
         
         # 7. Notify if failure
         if not api_result["success"]:

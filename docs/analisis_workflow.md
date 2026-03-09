@@ -37,3 +37,30 @@ El flujo original en n8n automatiza la publicación de contenidos en redes socia
 - `PLANNING_SHEET_ID`: `1PMvDlydPAJFb_NJo0TgLlHePH0vIZtfS4RK2GVP6bYY`
 - `BRANDS_SHEET_ID`: `1Yt0gJ-BxldHTcgSWXLdY7XPPxs0lmDf5lchJWmMprgA`
 - `GOOGLE_APPLICATION_CREDENTIALS`: Ruta al Service Account con permisos de lectura/escritura en Sheets.
+
+## Workflow 2: Historias (n8n → GCP)
+
+### Descripción del workflow original de Historias
+Este segundo flujo de n8n ("Metricool Publisher (Sheets -> Metricool STORYS) - MultiMarca [Fixed]") está diseñado específicamente para publicar Historias. Lee desde el mismo documento base pero apunta a la hoja `planificacion_historia`.
+
+### Diferencias respecto al flujo de Posts/Reels
+La lógica de extracción, validación de fechas futuras, filtro por redes activas, búsqueda del ID de la marca y normalización de URLs (incluso de Google Drive) es estructuralmente **idéntica** al flujo de Posts. 
+
+La única diferencia real radica en el payload enviado en la petición HTTP POST a la API de Metricool:
+- Se inyecta `instagramData: { type: 'STORY', autoPublish: true }`
+- Se inyecta `facebookData: { type: 'STORY' }`
+
+### Malas prácticas adicionales detectadas
+Las mismas que en el flujo principal: secretos fijos (`X-Mc-Auth`) en texto plano dentro de los nodos y redundancia de código JavaScript en n8n que es complejo de mantener si la API de Metricool cambia. No hay secretos nuevos.
+
+### Cambios realizados en esta integración
+En lugar de crear un script independiente o duplicar el backend, se **modificó la lógica base existente** (`workflow_logic.py` y `metricool_service.py`) para aceptar un parámetro `publication_type`.
+1. **`app/config.py`**: Se añadió `STORIES_SHEET_NAME` con valor por defecto `'planificacion_historia'`.
+2. **`metricool_service.py`**: El método `create_post` ahora detecta si `publication_type == "STORY"` y adapta el diccionario de datos de Instagram y Facebook antes del envío.
+3. **`workflow_logic.py`**: El orquestador puede procesar cualquier nombre de hoja y tipo de publicación, reutilizando la lógica dura.
+4. **`main.py`**: El endpoint `/run` ahora lanza dos procesos asíncronos en paralelo usando `BackgroundTasks`: uno procesa Posts y otro procesa Historias de manera independiente pero concurrente.
+
+### Impacto en el comportamiento
+- El servidor Cloud Run procesará ambos flujos (Posts e Historias) simultáneamente cada vez que el Scheduler sea invocado.
+- El flujo original de Posts es retrocompatible y no sufre alteraciones.
+- Se mantiene el principio DRY, resultando en una base de código muy mantenible.

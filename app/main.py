@@ -23,22 +23,31 @@ async def health():
     return {"status": "ok"}
 
 @app.get("/run")
-async def run_workflow(background_tasks: BackgroundTasks):
+async def run_workflow_get(background_tasks: BackgroundTasks):
     """
-    Trigger the migration workflow asynchronously.
-    Returns immediately while the task runs in the background.
+    Trigger the migration workflow asynchronously for both Posts and Stories.
+    Returns immediately while the tasks run in the background.
     """
-    logger.info("Metricool workflow requested.")
-    # In Cloud Run, requests have a timeout. 
-    # For many items, it's safer to run in background.
-    background_tasks.add_task(workflow_logic.run_migration)
-    return {"message": "Workflow started in background."}
+    logger.info("Metricool workflow requested via GET (Posts & Stories).")
+    
+    # Trigger Posts
+    background_tasks.add_task(workflow_logic.run_workflow, sheet_name="planificacion_data", publication_type="POST")
+    # Trigger Stories
+    background_tasks.add_task(workflow_logic.run_workflow, sheet_name=config.STORIES_SHEET_NAME, publication_type="STORY")
+    
+    return {"message": "Workflows for Posts and Stories started in background."}
 
 @app.post("/run")
 async def run_workflow_post(background_tasks: BackgroundTasks):
     """Same as GET /run but for POST requests from Scheduler."""
-    background_tasks.add_task(workflow_logic.run_migration)
-    return {"message": "Workflow started in background."}
+    logger.info("Metricool workflow requested via POST (Posts & Stories).")
+    
+    # Trigger Posts
+    background_tasks.add_task(workflow_logic.run_workflow, sheet_name="planificacion_data", publication_type="POST")
+    # Trigger Stories
+    background_tasks.add_task(workflow_logic.run_workflow, sheet_name=config.STORIES_SHEET_NAME, publication_type="STORY")
+    
+    return {"message": "Workflows for Posts and Stories started in background."}
 
 if __name__ == "__main__":
     import uvicorn
