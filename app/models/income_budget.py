@@ -10,8 +10,8 @@ class IncomeBudget(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
-    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
-    service_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("services.id", ondelete="RESTRICT"), nullable=False)
+    client_id: Mapped[str] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
+    service_id: Mapped[str] = mapped_column(ForeignKey("services.id", ondelete="RESTRICT"), nullable=False)
     budgeted_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     actual_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=True)
     planned_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -28,4 +28,4 @@ class IncomeBudget(Base):
     company = relationship("Company", back_populates="income_budgets")
     client = relationship("Client", back_populates="income_budgets")
     service = relationship("Service", back_populates="income_budgets")
-    transaction = relationship("Transaction", foreign_keys=[transaction_id], back_populates="income_budget", post_update=True)
+    transaction = relationship("Transaction", foreign_keys=[transaction_id], post_update=True)

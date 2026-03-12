@@ -7,7 +7,7 @@ from app.database import Base
 class Service(Base):
     __tablename__ = "services"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)

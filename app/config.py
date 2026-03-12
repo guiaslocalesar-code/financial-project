@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     AFIP_ENV: str = "homo"
     ENCRYPTION_KEY: str
     ALLOWED_ORIGINS: str = "*"
+    GCS_BUCKET_NAME: str = "agente-financiero-files" # Default value if not in .env
 
     @property
     def cors_origins(self) -> List[str]:
