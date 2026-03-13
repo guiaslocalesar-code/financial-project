@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 from app.database import get_db
+from app.dependencies import get_current_company, require_role
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.company import Company
@@ -14,7 +15,13 @@ from app.utils.enums import InvoiceStatus
 router = APIRouter(prefix="/invoices", tags=["Invoices"])
 
 @router.post("/", response_model=InvoiceResponse)
-async def create_invoice_draft(invoice_in: InvoiceCreate, db: AsyncSession = Depends(get_db)):
+async def create_invoice_draft(
+    invoice_in: InvoiceCreate, 
+    db: AsyncSession = Depends(get_db),
+    _ = Depends(require_role(["owner", "admin"]))
+):
+    await get_current_company(invoice_in.company_id, db=db)
+
     # Calculate totals
     subtotal = sum(item.unit_price * item.quantity for item in invoice_in.items)
     iva_rate = 21.0 # Default
@@ -46,7 +53,11 @@ async def create_invoice_draft(invoice_in: InvoiceCreate, db: AsyncSession = Dep
     return invoice
 
 @router.post("/{invoice_id}/emit")
-async def emit_invoice(invoice_id: UUID, db: AsyncSession = Depends(get_db)):
+async def emit_invoice(
+    invoice_id: UUID, 
+    db: AsyncSession = Depends(get_db),
+    _ = Depends(require_role(["owner", "admin"]))
+):
     # 1. Fetch invoice and relations
     result = await db.execute(
         select(Invoice).where(Invoice.id == invoice_id)
@@ -54,6 +65,10 @@ async def emit_invoice(invoice_id: UUID, db: AsyncSession = Depends(get_db)):
     invoice = result.scalar_one_or_none()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    # Secure check
+    await get_current_company(invoice.company_id, db=db)
+
     
     if invoice.status == InvoiceStatus.EMITTED:
         raise HTTPException(status_code=400, detail="Invoice already emitted")
@@ -84,6 +99,10 @@ async def emit_invoice(invoice_id: UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"AFIP Error: {afip_response.get('error')}")
 
 @router.get("/", response_model=list[InvoiceResponse])
-async def list_invoices(company_id: UUID, db: AsyncSession = Depends(get_db)):
+async def list_invoices(
+    company_id: UUID, 
+    db: AsyncSession = Depends(get_db),
+    _ = Depends(get_current_company)
+):
     result = await db.execute(select(Invoice).where(Invoice.company_id == company_id))
     return result.scalars().all()

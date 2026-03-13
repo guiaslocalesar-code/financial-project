@@ -6,6 +6,9 @@ from app.database import get_db
 from app.services.dashboard_service import dashboard_service
 from app.schemas.dashboard import DashboardData
 
+from app.dependencies import get_current_company
+from app.models.user import UserCompany
+
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 @router.get("/summary")
@@ -13,9 +16,19 @@ async def get_summary(
     company_id: UUID,
     month: int = Query(datetime.now().month, ge=1, le=12),
     year: int = Query(datetime.now().year),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user_company: UserCompany = Depends(get_current_company)
 ):
     summary = await dashboard_service.get_summary(company_id, month, year, db)
+    
+    # Calcular "tu parte"
+    quotaparte = float(user_company.quotaparte) / 100.0
+    
+    summary["tu_parte_ingresos"] = summary.get("ingresos_totales", 0) * quotaparte
+    summary["tu_parte_egresos"] = summary.get("egresos_totales", 0) * quotaparte
+    summary["tu_parte_utilidad"] = summary.get("utilidad_neta", 0) * quotaparte
+    summary["quotaparte"] = float(user_company.quotaparte)
+    
     return summary
 
 @router.get("/profitability")

@@ -12,3 +12,4 @@ from app.models.transaction import Transaction
 from app.models.payment_method import PaymentMethod
 from app.models.debt import Debt
 from app.models.debt_installment import DebtInstallment
+from app.models.user import User, UserCompany

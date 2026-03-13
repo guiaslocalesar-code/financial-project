@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from uuid import UUID
 from app.database import get_db
+from app.dependencies import get_current_company, require_role
 from app.models.client import Client
 from app.schemas.client import ClientCreate, ClientUpdate, ClientResponse
 from app.utils.validators import validate_cuit, validate_dni
@@ -10,7 +11,17 @@ from app.utils.validators import validate_cuit, validate_dni
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 @router.post("/", response_model=ClientResponse)
-async def create_client(client_in: ClientCreate, db: AsyncSession = Depends(get_db)):
+async def create_client(
+    client_in: ClientCreate, 
+    db: AsyncSession = Depends(get_db),
+    _ = Depends(require_role(["owner", "admin"]))
+):
+    # Verify company access
+    await get_current_company(client_in.company_id, _current_user=None, db=db) # Manual call or just use UC dependency if we can change signature
+    # Actually, it's better to use the dependency directly in the signature if we can pass company_id.
+    # But current_company requires company_id from path/query.
+    # I'll just validate manually inside for POST if it comes in body.
+
     # Validate CUIT/CUIL/DNI
     doc = client_in.cuit_cuil_dni
     if len(doc) > 10:
@@ -31,7 +42,8 @@ async def list_clients(
     company_id: UUID,
     skip: int = 0,
     limit: int = 100,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _ = Depends(get_current_company)
 ):
     result = await db.execute(
         select(Client)
@@ -42,11 +54,20 @@ async def list_clients(
     return result.scalars().all()
 
 @router.get("/{client_id}", response_model=ClientResponse)
-async def get_client(client_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_client(
+    client_id: UUID, 
+    db: AsyncSession = Depends(get_db),
+    # We need company_id to validate. If not in path, we might need a different dependency or fetch first.
+    # For simplicity, for sub-resources, we usually fetch and then check company_id.
+):
     result = await db.execute(select(Client).where(Client.id == client_id))
     client = result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+    
+    # Secure check
+    await get_current_company(client.company_id, db=db)
+    
     return client
 
 @router.put("/{client_id}", response_model=ClientResponse)
