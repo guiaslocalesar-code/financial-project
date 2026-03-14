@@ -29,6 +29,7 @@
 | `afip_cert` | TEXT | ✅ | NULL | Certificado AFIP (encriptado con Fernet) |
 | `afip_key` | TEXT | ✅ | NULL | Clave privada AFIP (encriptada) |
 | `afip_point_of_sale` | INTEGER | ✅ | NULL | Número de punto de venta habilitado en AFIP |
+| `imagen` | TEXT | ✅ | NULL | URL de la imagen/logo de la empresa |
 | `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
@@ -42,6 +43,8 @@
 - **1 Company → N ExpenseBudgets** (`expense_budgets.company_id`)
 - **1 Company → N IncomeBudgets** (`income_budgets.company_id`)
 - **1 Company → N Transactions** (`transactions.company_id`)
+- **1 Company → N PaymentMethods** (`payment_methods.company_id`)
+- **1 Company → N Debts** (`debts.company_id`)
 - **1 Company → N UserCompanies** (`user_companies.company_id`)
 
 ---
@@ -271,6 +274,7 @@ emitted → cancelled
 | `is_recurring` | BOOLEAN | ❌ | `false` | Si `true`, se clona automáticamente cada mes |
 | `status` | ENUM | ❌ | `pending` | Estado: `pending`, `paid`, `cancelled` |
 | `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (se llena al pagar) |
+| `debt_id` | UUID | ✅ | NULL | FK → `debts.id` (si el gasto corresponde a una cuota de deuda) |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
@@ -278,6 +282,7 @@ emitted → cancelled
 - **N ExpenseBudgets → 1 Company** (`company_id` FK)
 - **N ExpenseBudgets → 1 ExpenseType** (`expense_type_id` FK)
 - **N ExpenseBudgets → 1 ExpenseCategory** (`expense_category_id` FK)
+- **N ExpenseBudgets → 1 Debt** (`debt_id` FK, nullable)
 - **1 ExpenseBudget → 1 Transaction** (`transaction_id` FK, se llena al pagar — puede ser NULL)
 
 ### Flujo de estados
@@ -350,7 +355,7 @@ pending → cancelled
 | `amount` | NUMERIC(12,2) | ❌ | — | Monto real de la transacción |
 | `currency` | VARCHAR(3) | ❌ | `ARS` | Moneda |
 | `exchange_rate` | NUMERIC(10,4) | ❌ | `1` | Tipo de cambio |
-| `payment_method` | ENUM | ✅ | NULL | Método: `cash`, `transfer`, `check`, `card`, `other` |
+| `payment_method_id` | VARCHAR(50) | ✅ | NULL | FK → `payment_methods.id` |
 | `description` | TEXT | ✅ | NULL | Descripción del movimiento |
 | `transaction_date` | DATE | ❌ | `current_date` | Fecha real del movimiento de dinero |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación del registro |
@@ -365,6 +370,9 @@ pending → cancelled
 - **N Transactions → 1 Service** (`service_id` FK, nullable)
 - **N Transactions → 1 ExpenseType** (`expense_type_id` FK, nullable)
 - **N Transactions → 1 ExpenseCategory** (`expense_category_id` FK, nullable)
+- **N Transactions → 1 PaymentMethod** (`payment_method_id` FK, nullable)
+- **1 Transaction → 1 Debt** (`debts.transaction_id`)
+- **1 Transaction → 1 DebtInstallment** (`debt_installments.transaction_id`)
 
 ---
 
@@ -412,6 +420,88 @@ pending → cancelled
 
 ---
 
+## 💳 TABLA 14: `payment_methods`
+**Propósito:** Definición de medios de pago disponibles por empresa. Incluye cuentas bancarias (débito) y tarjetas de crédito con su lógica de cierre y vencimiento.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | VARCHAR(50) | ❌ | — | Primary Key (Slug único por empresa) |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `name` | VARCHAR(100) | ❌ | — | Nombre descriptivo (ej: "Galicia 1234") |
+| `type` | ENUM | ❌ | — | Tipo: `cash`, `bank`, `virtual_wallet` |
+| `bank` | VARCHAR(100) | ✅ | NULL | Entidad bancaria |
+| `is_credit` | BOOLEAN | ❌ | `false` | Indica si es tarjeta de crédito |
+| `closing_day` | INTEGER | ✅ | NULL | Día de cierre (solo crédito) |
+| `due_day` | INTEGER | ✅ | NULL | Día de vencimiento (solo crédito) |
+| `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+
+### Relaciones
+- **N PaymentMethods → 1 Company** (`company_id` FK)
+- **1 PaymentMethod → N Debts** (`debts.payment_method_id`)
+- **1 PaymentMethod → N Transactions** (`transactions.payment_method_id`)
+
+---
+
+## 💸 TABLA 15: `debts`
+**Propósito:** Gestión de deudas y préstamos (Pasivos). Registra el capital inicial, intereses y la planificación en cuotas. Cada cuota se vincula a `expense_budgets` para el flujo proyectado.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (desembolso inicial) |
+| `payment_method_id` | VARCHAR(50) | ✅ | NULL | FK → `payment_methods.id` (donde se paga) |
+| `description` | TEXT | ❌ | — | Concepto de la deuda |
+| `original_amount` | NUMERIC(12,2) | ❌ | — | Capital solicitado |
+| `interest_type` | ENUM | ❌ | — | Tipo: `fixed`, `variable`, `none` |
+| `interest_rate` | NUMERIC(6,2) | ❌ | — | Tasa de interés (TEM) |
+| `interest_total` | NUMERIC(12,2) | ❌ | — | Interés total calculado |
+| `total_amount` | NUMERIC(12,2) | ❌ | — | Capital + Intereses |
+| `installments` | INTEGER | ❌ | `1` | Cantidad de cuotas |
+| `installment_amount` | NUMERIC(12,2) | ❌ | — | Valor de cada cuota |
+| `first_due_date` | DATE | ❌ | — | Vencimiento de la primera cuota |
+| `status` | ENUM | ❌ | `active` | Estado: `active`, `paid`, `cancelled` |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+### Relaciones
+- **N Debts → 1 Company** (`company_id` FK)
+- **N Debts → 1 PaymentMethod** (`payment_method_id` FK)
+- **N Debts → 1 Transaction** (`transaction_id` FK — desembolso)
+- **1 Debt → N DebtInstallments** (`debt_installments.debt_id`)
+- **1 Debt → N ExpenseBudgets** (`expense_budgets.debt_id`)
+
+---
+
+## 📈 TABLA 16: `debt_installments`
+**Propósito:** Desglose de cada cuota de una deuda. Permite trackear el pago individual, discriminando capital e interés por cuota.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `debt_id` | UUID | ❌ | — | FK → `debts.id` |
+| `installment_number` | INTEGER | ❌ | — | Nro de cuota (ej: 1, 2, 3...) |
+| `due_date` | DATE | ❌ | — | Fecha de vencimiento |
+| `amount` | NUMERIC(12,2) | ❌ | — | Valor total de la cuota |
+| `capital_amount` | NUMERIC(12,2) | ❌ | — | Parte de capital |
+| `interest_amount` | NUMERIC(12,2) | ❌ | — | Parte de interés |
+| `status` | ENUM | ❌ | `pending` | Estado: `pending`, `paid`, `overdue` |
+| `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (pago de la cuota) |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+
+### Relaciones
+- **N DebtInstallments → 1 Debt** (`debt_id` FK)
+- **N DebtInstallments → 1 Transaction** (`transaction_id` FK — pago)
+
+---
+
 ## 🔄 Diagrama de Relaciones
 
 ```
@@ -430,6 +520,9 @@ companies (1)
 │   └── transactions (1) [cuando se cobra]
 ├── users (N)
 │   └── user_companies (N)
+├── payment_methods (N)
+│   └── debts (N)
+│       └── debt_installments (N)
 └── transactions (N)
     ├── → client (nullable)
     ├── → invoice (nullable)
@@ -437,7 +530,9 @@ companies (1)
     ├── → income_budget (nullable)
     ├── → service (nullable)
     ├── → expense_type (nullable)
-    └── → expense_category (nullable)
+    ├── → expense_category (nullable)
+    ├── → payment_method (required or nullable)
+    └── → debt_installments (nullable)
 ```
 
 ---
@@ -455,7 +550,10 @@ companies (1)
 | `incomebudgetstatus` | `PENDING`, `COLLECTED`, `CANCELLED` |
 | `transactiontype` | `INCOME`, `EXPENSE` |
 | `expenseorigin` | `BUDGETED`, `UNBUDGETED` |
-| `paymentmethod` | `CASH`, `TRANSFER`, `CHECK`, `CARD`, `OTHER` |
+| `paymentmethodtype` | `CASH`, `BANK`, `VIRTUAL_WALLET` |
+| `interesttype` | `FIXED`, `VARIABLE`, `NONE` |
+| `debtstatus` | `ACTIVE`, `PAID`, `CANCELLED` |
+| `installmentstatus` | `PENDING`, `PAID`, `OVERDUE` |
 | `userrole` | `OWNER`, `ADMIN`, `VIEWER` |
 
 ---
@@ -481,10 +579,14 @@ companies (1)
 | GET | `/transactions/` | `transactions` |
 | GET | `/dashboard/summary` | `transactions`, `expense_budgets` |
 | GET | `/dashboard/profitability` | `invoice_items`, `transactions` |
+| GET | `/payment-methods/` | `payment_methods` |
+| POST | `/debts/` | `debts`, `debt_installments`, `expense_budgets` |
+| GET | `/debts/` | `debts` |
 | POST | `/auth/google` | `users` (login/registro) |
 | GET | `/auth/me` | `users` (perfil actual) |
 | GET | `/companies/{id}/users` | `user_companies`, `users` |
 | POST | `/companies/{id}/users` | `user_companies` (invitar) |
+| PATCH | `/companies/{id}/imagen` | `companies` (subir logo) |
 
 ---
 
