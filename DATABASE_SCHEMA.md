@@ -42,6 +42,7 @@
 - **1 Company → N ExpenseBudgets** (`expense_budgets.company_id`)
 - **1 Company → N IncomeBudgets** (`income_budgets.company_id`)
 - **1 Company → N Transactions** (`transactions.company_id`)
+- **1 Company → N UserCompanies** (`user_companies.company_id`)
 
 ---
 
@@ -55,6 +56,8 @@
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `name` | VARCHAR(255) | ❌ | — | Razón social o nombre del cliente |
+| `customer_name` | VARCHAR(255) | ✅ | NULL | Nombre de fantasía o comercial (interno) |
+| `customer_alias` | VARCHAR(100) | ✅ | NULL | Alias corto para identificación rápida |
 | `cuit_cuil_dni` | VARCHAR(20) | ❌ | — | Documento fiscal (CUIT, CUIL o DNI validado) |
 | `fiscal_condition` | ENUM | ❌ | — | Condición: `RI`, `monotributo`, `consumidor_final`, `exento` |
 | `email` | VARCHAR(255) | ✅ | NULL | Email de contacto |
@@ -63,6 +66,7 @@
 | `city` | VARCHAR(100) | ✅ | NULL | Ciudad |
 | `province` | VARCHAR(100) | ✅ | NULL | Provincia |
 | `zip_code` | VARCHAR(10) | ✅ | NULL | Código postal |
+| `imagen` | TEXT | ✅ | NULL | URL de la imagen/logo del cliente (AppSheet) |
 | `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
@@ -364,6 +368,50 @@ pending → cancelled
 
 ---
 
+## 👤 TABLA 12: `users`
+**Propósito:** Identidad de los usuarios del sistema. Los usuarios se crean automáticamente en su primer inicio de sesión mediante Google OAuth.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `google_id` | VARCHAR(255) | ❌ | — | ID único provisto por Google |
+| `email` | VARCHAR(255) | ❌ | — | Email principal (único) |
+| `name` | VARCHAR(255) | ✅ | NULL | Nombre completo |
+| `avatar_url` | TEXT | ✅ | NULL | URL de la imagen de perfil |
+| `is_active` | BOOLEAN | ❌ | `true` | Estado del usuario |
+| `last_login` | TIMESTAMP | ✅ | NULL | Fecha del último acceso |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+### Relaciones
+- **1 User → N UserCompanies** (`user_companies.user_id`)
+
+---
+
+## 🏢 TABLA 13: `user_companies`
+**Propósito:** Relación entre usuarios y empresas. Define los permisos y la participación accionaria (`quotaparte`) de cada usuario en cada agencia.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `user_id` | UUID | ❌ | — | FK → `users.id` |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `role` | ENUM | ❌ | `viewer` | Rol: `owner`, `admin`, `viewer` |
+| `quotaparte` | NUMERIC(5,2) | ❌ | `0` | Porcentaje de participación (0-100%) |
+| `is_active` | BOOLEAN | ❌ | `true` | Baja lógica de la relación |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+### Relaciones
+- **N UserCompanies → 1 User** (`user_id` FK)
+- **N UserCompanies → 1 Company** (`company_id` FK)
+
+---
+
 ## 🔄 Diagrama de Relaciones
 
 ```
@@ -380,6 +428,8 @@ companies (1)
 │           └── transactions (1) [cuando se paga]
 ├── income_budgets (N)
 │   └── transactions (1) [cuando se cobra]
+├── users (N)
+│   └── user_companies (N)
 └── transactions (N)
     ├── → client (nullable)
     ├── → invoice (nullable)
@@ -406,6 +456,7 @@ companies (1)
 | `transactiontype` | `INCOME`, `EXPENSE` |
 | `expenseorigin` | `BUDGETED`, `UNBUDGETED` |
 | `paymentmethod` | `CASH`, `TRANSFER`, `CHECK`, `CARD`, `OTHER` |
+| `userrole` | `OWNER`, `ADMIN`, `VIEWER` |
 
 ---
 
@@ -430,7 +481,11 @@ companies (1)
 | GET | `/transactions/` | `transactions` |
 | GET | `/dashboard/summary` | `transactions`, `expense_budgets` |
 | GET | `/dashboard/profitability` | `invoice_items`, `transactions` |
+| POST | `/auth/google` | `users` (login/registro) |
+| GET | `/auth/me` | `users` (perfil actual) |
+| GET | `/companies/{id}/users` | `user_companies`, `users` |
+| POST | `/companies/{id}/users` | `user_companies` (invitar) |
 
 ---
 
-*Generado: 2026-03-08 | Proyecto: `aplicacion-financiera-guias-42` (GCP)*
+*Generado: 2026-03-14 | Proyecto: `aplicacion-financiera-guias-42` (GCP)*
