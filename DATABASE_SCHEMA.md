@@ -56,11 +56,11 @@
 
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
-| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `id` | VARCHAR(50) | ❌ | — | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `name` | VARCHAR(255) | ❌ | — | Razón social o nombre del cliente |
-| `customer_name` | VARCHAR(255) | ✅ | NULL | Nombre de fantasía o comercial (interno) |
-| `customer_alias` | VARCHAR(100) | ✅ | NULL | Alias corto para identificación rápida |
+| `customer_name` | VARCHAR(255) | ✅ | NULL | Nombre completo del cliente (ej: "Juan García") |
+| `customer_alias` | VARCHAR(100) | ✅ | NULL | Nombre corto o apodo (ej: "Juancho") |
 | `cuit_cuil_dni` | VARCHAR(20) | ❌ | — | Documento fiscal (CUIT, CUIL o DNI validado) |
 | `fiscal_condition` | ENUM | ❌ | — | Condición: `RI`, `monotributo`, `consumidor_final`, `exento` |
 | `email` | VARCHAR(255) | ✅ | NULL | Email de contacto |
@@ -97,7 +97,7 @@
 
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
-| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `id` | VARCHAR(50) | ❌ | — | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `name` | VARCHAR(100) | ❌ | — | Nombre del servicio (ej: "Manejo de Redes", "Google Ads") |
 | `description` | TEXT | ✅ | NULL | Descripción detallada del servicio |
@@ -122,8 +122,8 @@
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
-| `client_id` | UUID | ❌ | — | FK → `clients.id` |
-| `service_id` | UUID | ❌ | — | FK → `services.id` |
+| `client_id` | VARCHAR(50) | ❌ | — | FK → `clients.id` |
+| `service_id` | VARCHAR(50) | ❌ | — | FK → `services.id` |
 | `monthly_fee` | NUMERIC(12,2) | ❌ | — | Precio mensual acordado con este cliente |
 | `currency` | VARCHAR(3) | ❌ | `ARS` | Moneda del precio |
 | `start_date` | DATE | ❌ | — | Fecha de inicio del contrato |
@@ -150,7 +150,7 @@
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
-| `client_id` | UUID | ❌ | — | FK → `clients.id` |
+| `client_id` | VARCHAR(50) | ❌ | — | FK → `clients.id` |
 | `invoice_type` | ENUM | ❌ | — | Tipo: `A`, `B`, `C` |
 | `invoice_number` | VARCHAR(20) | ✅ | NULL | Número generado por AFIP (ej: `0001-00000001`) |
 | `point_of_sale` | INTEGER | ❌ | — | Punto de venta habilitado |
@@ -194,7 +194,7 @@ emitted → cancelled
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `invoice_id` | UUID | ❌ | — | FK → `invoices.id` |
-| `service_id` | UUID | ✅ | NULL | FK → `services.id` (opcional, para métricas) |
+| `service_id` | VARCHAR(50) | ✅ | NULL | FK → `services.id` (opcional, para métricas) |
 | `description` | TEXT | ❌ | — | Descripción del ítem (ej: "Manejo Redes Enero 2025") |
 | `quantity` | NUMERIC(10,2) | ❌ | `1` | Cantidad |
 | `unit_price` | NUMERIC(12,2) | ❌ | — | Precio unitario |
@@ -305,8 +305,8 @@ Todos los registros con `is_recurring = true` al cierre de cada mes generan copi
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
-| `client_id` | UUID | ❌ | — | FK → `clients.id` |
-| `service_id` | UUID | ❌ | — | FK → `services.id` |
+| `client_id` | VARCHAR(50) | ❌ | — | FK → `clients.id` |
+| `service_id` | VARCHAR(50) | ❌ | — | FK → `services.id` |
 | `budgeted_amount` | NUMERIC(12,2) | ❌ | — | Monto original a cobrar |
 | `actual_amount` | NUMERIC(12,2) | ✅ | NULL | Monto real cobrado |
 | `planned_date` | DATE | ❌ | — | Fecha estimada de cobro |
@@ -342,11 +342,11 @@ pending → cancelled
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
-| `client_id` | UUID | ✅ | NULL | FK → `clients.id` (solo en ingresos) |
+| `client_id` | VARCHAR(50) | ✅ | NULL | FK → `clients.id` (solo en ingresos) |
 | `invoice_id` | UUID | ✅ | NULL | FK → `invoices.id` (si el ingreso viene de una factura) |
 | `budget_id` | UUID | ✅ | NULL | FK → `expense_budgets.id` (si el egreso vino del presupuesto) |
 | `income_budget_id` | UUID | ✅ | NULL | FK → `income_budgets.id` (si el ingreso vino de cobranza presupuestada) |
-| `service_id` | UUID | ✅ | NULL | FK → `services.id` (para métricas de rentabilidad) |
+| `service_id` | VARCHAR(50) | ✅ | NULL | FK → `services.id` (para métricas de rentabilidad) |
 | `expense_type_id` | UUID | ✅ | NULL | FK → `expense_types.id` (solo en egresos) |
 | `expense_category_id` | UUID | ✅ | NULL | FK → `expense_categories.id` (solo en egresos) |
 | `type` | ENUM | ❌ | — | Tipo: `income`, `expense` |
@@ -355,7 +355,8 @@ pending → cancelled
 | `amount` | NUMERIC(12,2) | ❌ | — | Monto real de la transacción |
 | `currency` | VARCHAR(3) | ❌ | `ARS` | Moneda |
 | `exchange_rate` | NUMERIC(10,4) | ❌ | `1` | Tipo de cambio |
-| `payment_method_id` | VARCHAR(50) | ✅ | NULL | FK → `payment_methods.id` |
+| `payment_method` | ENUM | ✅ | NULL | Medio de pago (legacy/simple): `cash`, `transfer`, `check`, `card`, `other` |
+| `payment_method_id` | VARCHAR(50) | ✅ | NULL | FK → `payment_methods.id` (detalle completo) |
 | `description` | TEXT | ✅ | NULL | Descripción del movimiento |
 | `transaction_date` | DATE | ❌ | `current_date` | Fecha real del movimiento de dinero |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación del registro |
@@ -430,11 +431,11 @@ pending → cancelled
 | `id` | VARCHAR(50) | ❌ | — | Primary Key (Slug único por empresa) |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `name` | VARCHAR(100) | ❌ | — | Nombre descriptivo (ej: "Galicia 1234") |
-| `type` | ENUM | ❌ | — | Tipo: `cash`, `bank`, `virtual_wallet` |
+| `type` | VARCHAR(20) | ❌ | — | Tipo: `cash`, `transfer`, `credit_card`, `debit_card`, `financing` |
 | `bank` | VARCHAR(100) | ✅ | NULL | Entidad bancaria |
 | `is_credit` | BOOLEAN | ❌ | `false` | Indica si es tarjeta de crédito |
-| `closing_day` | INTEGER | ✅ | NULL | Día de cierre (solo crédito) |
-| `due_day` | INTEGER | ✅ | NULL | Día de vencimiento (solo crédito) |
+| `closing_day` | INTEGER | ✅ | NULL | Día de cierre (1-31, solo crédito) |
+| `due_day` | INTEGER | ✅ | NULL | Día de vencimiento (1-31, solo crédito) |
 | `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 
@@ -458,14 +459,14 @@ pending → cancelled
 | `payment_method_id` | VARCHAR(50) | ✅ | NULL | FK → `payment_methods.id` (donde se paga) |
 | `description` | TEXT | ❌ | — | Concepto de la deuda |
 | `original_amount` | NUMERIC(12,2) | ❌ | — | Capital solicitado |
-| `interest_type` | ENUM | ❌ | — | Tipo: `fixed`, `variable`, `none` |
-| `interest_rate` | NUMERIC(6,2) | ❌ | — | Tasa de interés (TEM) |
-| `interest_total` | NUMERIC(12,2) | ❌ | — | Interés total calculado |
+| `interest_type` | VARCHAR(20) | ❌ | `none` | Tipo: `none`, `fixed_rate` |
+| `interest_rate` | NUMERIC(6,2) | ❌ | `0` | Tasa de interés (TEM) |
+| `interest_total` | NUMERIC(12,2) | ❌ | `0` | Interés total calculado al inicio |
 | `total_amount` | NUMERIC(12,2) | ❌ | — | Capital + Intereses |
 | `installments` | INTEGER | ❌ | `1` | Cantidad de cuotas |
-| `installment_amount` | NUMERIC(12,2) | ❌ | — | Valor de cada cuota |
+| `installment_amount` | NUMERIC(12,2) | ❌ | — | Valor de cada cuotas |
 | `first_due_date` | DATE | ❌ | — | Vencimiento de la primera cuota |
-| `status` | ENUM | ❌ | `active` | Estado: `active`, `paid`, `cancelled` |
+| `status` | VARCHAR(20) | ❌ | `active` | Estado: `active`, `partial`, `paid` |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
@@ -492,7 +493,7 @@ pending → cancelled
 | `amount` | NUMERIC(12,2) | ❌ | — | Valor total de la cuota |
 | `capital_amount` | NUMERIC(12,2) | ❌ | — | Parte de capital |
 | `interest_amount` | NUMERIC(12,2) | ❌ | — | Parte de interés |
-| `status` | ENUM | ❌ | `pending` | Estado: `pending`, `paid`, `overdue` |
+| `status` | VARCHAR(20) | ❌ | `pending` | Estado: `pending`, `paid` |
 | `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (pago de la cuota) |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 
@@ -550,10 +551,10 @@ companies (1)
 | `incomebudgetstatus` | `PENDING`, `COLLECTED`, `CANCELLED` |
 | `transactiontype` | `INCOME`, `EXPENSE` |
 | `expenseorigin` | `BUDGETED`, `UNBUDGETED` |
-| `paymentmethodtype` | `CASH`, `BANK`, `VIRTUAL_WALLET` |
-| `interesttype` | `FIXED`, `VARIABLE`, `NONE` |
-| `debtstatus` | `ACTIVE`, `PAID`, `CANCELLED` |
-| `installmentstatus` | `PENDING`, `PAID`, `OVERDUE` |
+| `paymentmethodtype` | `cash`, `transfer`, `credit_card`, `debit_card`, `financing` |
+| `interesttype` | `none`, `fixed_rate` |
+| `debtstatus` | `active`, `partial`, `paid` |
+| `installmentstatus` | `pending`, `paid` |
 | `userrole` | `OWNER`, `ADMIN`, `VIEWER` |
 
 ---
