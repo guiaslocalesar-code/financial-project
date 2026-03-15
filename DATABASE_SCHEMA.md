@@ -46,6 +46,9 @@
 - **1 Company → N PaymentMethods** (`payment_methods.company_id`)
 - **1 Company → N Debts** (`debts.company_id`)
 - **1 Company → N UserCompanies** (`user_companies.company_id`)
+- **1 Company → N CommissionRecipients** (`commission_recipients.company_id`)
+- **1 Company → N CommissionRules** (`commission_rules.company_id`)
+- **1 Company → N Commissions** (`commissions.company_id`)
 
 ---
 
@@ -503,6 +506,108 @@ pending → cancelled
 
 ---
 
+## 🤝 TABLA 17: `commission_recipients`
+**Propósito:** Catálogo de quiénes reciben comisiones (proveedores, empleados, socios). Cada recipient puede tener múltiples reglas de comisión por cliente y/o servicio.
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|-­­­­--|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `type` | ENUM | ❌ | — | Tipo: `supplier`, `employee`, `partner` |
+| `name` | VARCHAR(255) | ❌ | — | Nombre del recipient |
+| `cuit` | VARCHAR(20) | ✅ | NULL | CUIT fiscal (opcional) |
+| `email` | VARCHAR(255) | ✅ | NULL | Email de contacto |
+| `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+
+### Índices
+- `idx_commission_recipients_company` ON `(company_id, is_active)`
+
+### Relaciones
+- **N CommissionRecipients → 1 Company** (`company_id` FK)
+- **1 CommissionRecipient → N CommissionRules** (`commission_rules.recipient_id`)
+- **1 CommissionRecipient → N Commissions** (`commissions.recipient_id`)
+
+---
+
+## 📐 TABLA 18: `commission_rules`
+**Propósito:** Reglas de porcentaje de comisión por recipient, filtradas opcionalmente por cliente y/o servicio. Se aplican automáticamente al cobrar un ingreso. Permiten condiciones específicas (ej: sólo para Meta, sólo para un cliente) o genéricas (null = aplica a todos).
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `recipient_id` | UUID | ❌ | — | FK → `commission_recipients.id` |
+| `client_id` | VARCHAR(50) | ✅ | NULL | FK → `clients.id` (NULL = aplica a todos) |
+| `service_id` | VARCHAR(50) | ✅ | NULL | FK → `services.id` (NULL = aplica a todos) |
+| `percentage` | NUMERIC(5,2) | ❌ | — | Porcentaje a aplicar sobre ingreso bruto |
+| `priority` | INTEGER | ❌ | `1` | Orden de aplicación (ASC) |
+| `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+
+### Constraints
+- `UNIQUE(company_id, recipient_id, client_id, service_id)` — evita reglas duplicadas.
+- `CHECK (percentage >= 0 AND percentage <= 100)`
+
+### Índices
+- `idx_commission_rules_company` ON `(company_id, is_active)`
+
+### Relaciones
+- **N CommissionRules → 1 Company** (`company_id` FK)
+- **N CommissionRules → 1 CommissionRecipient** (`recipient_id` FK)
+- **1 CommissionRule → N Commissions** (`commissions.commission_rule_id`)
+
+---
+
+## 💸 TABLA 19: `commissions`
+**Propósito:** Registro central de todas las comisiones calculadas sobre ingresos reales. Se generan **automáticamente** al cobrar un ingreso (`POST /income-budgets/{id}/collect`). La base de cálculo es siempre el **ingreso bruto** (`transaction.amount`), nunca la utilidad neta. Múltiples comisiones pueden existir por ingreso (suma de varios %).
+
+### Columnas
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `income_transaction_id` | UUID | ❌ | — | FK → `transactions.id` (el ingreso que generó la comisión) |
+| `commission_rule_id` | UUID | ✅ | NULL | FK → `commission_rules.id` (regla que originó esta comisión) |
+| `recipient_id` | UUID | ❌ | — | FK → `commission_recipients.id` |
+| `client_id` | VARCHAR(50) | ❌ | — | ID del cliente del ingreso |
+| `service_id` | VARCHAR(50) | ❌ | — | ID del servicio del ingreso |
+| `base_amount` | NUMERIC(12,2) | ❌ | — | Ingreso bruto (fuente del cálculo) |
+| `commission_amount` | NUMERIC(12,2) | ❌ | — | Monto de la comisión (`base × %`) |
+| `status` | ENUM | ❌ | `pending` | Estado: `pending`, `paid`, `cancelled` |
+| `payment_transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (egreso generado al pagar) |
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+
+### Índices
+- `idx_commissions_status` ON `(company_id, status)`
+- `idx_commissions_income` ON `(income_transaction_id)`
+
+### Relaciones
+- **N Commissions → 1 Company** (`company_id` FK)
+- **N Commissions → 1 Transaction** (`income_transaction_id` FK — ingreso origen)
+- **N Commissions → 1 CommissionRule** (`commission_rule_id` FK, nullable)
+- **N Commissions → 1 CommissionRecipient** (`recipient_id` FK)
+- **N Commissions → 1 Transaction** (`payment_transaction_id` FK — pago, nullable)
+
+### Flujo de estados
+```
+pending → [POST /commissions/{id}/pay] → paid  (crea Transaction expense automáticamente)
+pending → cancelled
+```
+
+### Reglas de negocio
+- **Base = ingreso bruto** (`transaction.amount`), NUNCA utilidad neta
+- **Automático**: se calculan en el hook de `POST /income-budgets/{id}/collect`
+- **Múltiples por ingreso**: varios recipients pueden comisionar el mismo ingreso
+- **Si suma % > 100**: se permite pero se logea un `warning`
+
+---
+
 ## 🔄 Diagrama de Relaciones
 
 ```
@@ -519,6 +624,10 @@ companies (1)
 │           └── transactions (1) [cuando se paga]
 ├── income_budgets (N)
 │   └── transactions (1) [cuando se cobra]
+│       └── commissions (N) [automáticas al cobrar]
+├── commission_recipients (N)
+│   └── commission_rules (N)
+│       └── commissions (N)
 ├── users (N)
 │   └── user_companies (N)
 ├── payment_methods (N)
@@ -556,6 +665,8 @@ companies (1)
 | `debtstatus` | `active`, `partial`, `paid` |
 | `installmentstatus` | `pending`, `paid` |
 | `userrole` | `OWNER`, `ADMIN`, `VIEWER` |
+| `recipienttype` | `supplier`, `employee`, `partner` |
+| `commissionstatus` | `pending`, `paid`, `cancelled` |
 
 ---
 
@@ -588,7 +699,20 @@ companies (1)
 | GET | `/companies/{id}/users` | `user_companies`, `users` |
 | POST | `/companies/{id}/users` | `user_companies` (invitar) |
 | PATCH | `/companies/{id}/imagen` | `companies` (subir logo) |
+| POST | `/commission-recipients` | `commission_recipients` |
+| GET | `/commission-recipients` | `commission_recipients` |
+| PATCH | `/commission-recipients/{id}` | `commission_recipients` |
+| DELETE | `/commission-recipients/{id}` | `commission_recipients` (baja lógica) |
+| POST | `/commission-rules` | `commission_rules` |
+| GET | `/commission-rules` | `commission_rules` |
+| PATCH | `/commission-rules/{id}` | `commission_rules` |
+| DELETE | `/commission-rules/{id}` | `commission_rules` (baja lógica) |
+| GET | `/commissions/pending` | `commissions` |
+| POST | `/commissions/{id}/pay` | `commissions`, `transactions` |
+| POST | `/commissions/generate` | `commissions` (recalcular) |
+| GET | `/commissions/recipient/{id}/summary` | `commissions`, `commission_recipients` |
+| GET | `/dashboard/commissions-summary` | `commissions`, `commission_recipients` |
 
 ---
 
-*Generado: 2026-03-14 | Proyecto: `aplicacion-financiera-guias-42` (GCP)*
+*Generado: 2026-03-14 | Actualizado: 2026-03-14 (sistema de comisiones) | Proyecto: `aplicacion-financiera-guias-42` (GCP)*

@@ -24,9 +24,10 @@ async def get_summary(
     # Calcular "tu parte"
     quotaparte = float(user_company.quotaparte) / 100.0
     
-    summary["tu_parte_ingresos"] = summary.get("ingresos_totales", 0) * quotaparte
-    summary["tu_parte_egresos"] = summary.get("egresos_totales", 0) * quotaparte
-    summary["tu_parte_utilidad"] = summary.get("utilidad_neta", 0) * quotaparte
+    summary["tu_parte_ingresos"] = summary.get("total_income", 0) * quotaparte
+    summary["tu_parte_egresos"] = summary.get("total_expenses", 0) * quotaparte
+    summary["tu_parte_commissions"] = summary.get("total_commissions", 0) * quotaparte
+    summary["tu_parte_utilidad"] = summary.get("balance", 0) * quotaparte
     summary["quotaparte"] = float(user_company.quotaparte)
     
     return summary

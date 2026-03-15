@@ -5,7 +5,7 @@ from app.routers import (
     companies, clients, services, client_services, 
     expenses, budgets, invoices, transactions, 
     dashboard, income_budgets, debts,
-    auth, users
+    auth, users, commissions
 )
 
 app = FastAPI(
@@ -39,6 +39,7 @@ app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(debts.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(commissions.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

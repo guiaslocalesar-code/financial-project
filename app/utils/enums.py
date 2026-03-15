@@ -50,3 +50,13 @@ class PaymentMethod(str, enum.Enum):
     CHECK = "check"
     CARD = "card"
     OTHER = "other"
+
+class RecipientType(str, enum.Enum):
+    SUPPLIER = "supplier"
+    EMPLOYEE = "employee"
+    PARTNER = "partner"
+
+class CommissionStatus(str, enum.Enum):
+    PENDING = "pending"
+    PAID = "paid"
+    CANCELLED = "cancelled"

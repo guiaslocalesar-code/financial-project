@@ -8,6 +8,7 @@ from app.models.income_budget import IncomeBudget
 from app.models.transaction import Transaction
 from app.utils.enums import IncomeBudgetStatus, TransactionType
 from app.schemas.income_budget import IncomeBudgetCreate, IncomeBudgetUpdate, IncomeBudgetResponse, IncomeBudgetCollect, IncomeSummary
+from app.services.commission_service import calculate_commissions_for_income
 from typing import List
 
 router = APIRouter(prefix="/income-budgets", tags=["Income Budgets"])
@@ -70,6 +71,9 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
     budget.status = IncomeBudgetStatus.COLLECTED
     budget.actual_amount = final_amount
     budget.transaction_id = transaction.id
+    
+    # Calcular comisiones automáticamente sobre el ingreso bruto
+    await calculate_commissions_for_income(db, transaction.id)
     
     await db.commit()
     return {"message": "Income collected and transaction created", "transaction_id": transaction.id}

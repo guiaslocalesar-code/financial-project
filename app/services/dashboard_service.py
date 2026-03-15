@@ -5,7 +5,8 @@ from app.models.transaction import Transaction
 from app.models.invoice_item import InvoiceItem
 from app.models.expense_budget import ExpenseBudget
 from app.models.service import Service
-from app.utils.enums import TransactionType, BudgetStatus
+from app.models.commission import Commission
+from app.utils.enums import TransactionType, BudgetStatus, CommissionStatus
 
 class DashboardService:
     async def get_summary(self, company_id: UUID, month: int, year: int, db: AsyncSession):
@@ -45,10 +46,40 @@ class DashboardService:
         )
         pending_to_pay = pending_res.scalar() or 0.0
 
+        # Total Commissions pending
+        comm_pending_res = await db.execute(
+            select(func.sum(Commission.commission_amount))
+            .where(
+                Commission.company_id == company_id,
+                Commission.status == CommissionStatus.PENDING,
+                func.extract('month', Commission.created_at) == month,
+                func.extract('year', Commission.created_at) == year
+            )
+        )
+        total_commissions_pending = float(comm_pending_res.scalar() or 0.0)
+
+        # Total Commissions paid
+        comm_paid_res = await db.execute(
+            select(func.sum(Commission.commission_amount))
+            .where(
+                Commission.company_id == company_id,
+                Commission.status == CommissionStatus.PAID,
+                func.extract('month', Commission.created_at) == month,
+                func.extract('year', Commission.created_at) == year
+            )
+        )
+        total_commissions_paid = float(comm_paid_res.scalar() or 0.0)
+
+        total_commissions = total_commissions_pending + total_commissions_paid
+
         return {
             "total_income": total_income,
             "total_expenses": total_expenses,
-            "balance": total_income - total_expenses,
+            "total_commissions_pending": total_commissions_pending,
+            "total_commissions_paid": total_commissions_paid,
+            "total_commissions": total_commissions,
+            "net_income_after_commissions": total_income - total_commissions,
+            "balance": total_income - total_expenses - total_commissions,
             "pending_to_pay": pending_to_pay
         }
 

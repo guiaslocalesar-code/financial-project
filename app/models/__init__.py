@@ -13,3 +13,6 @@ from app.models.payment_method import PaymentMethod
 from app.models.debt import Debt
 from app.models.debt_installment import DebtInstallment
 from app.models.user import User, UserCompany
+from app.models.commission_recipient import CommissionRecipient
+from app.models.commission_rule import CommissionRule
+from app.models.commission import Commission
