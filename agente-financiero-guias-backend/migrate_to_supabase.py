@@ -4,6 +4,7 @@ from sqlalchemy import select, text
 from app.database import Base
 from app.config import settings
 import sys
+import app.models # Crucial: Imports all models to register them with Base.metadata
 
 # Current GCP DB
 SOURCE_URL = settings.async_database_url
