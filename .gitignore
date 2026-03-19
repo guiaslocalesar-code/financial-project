@@ -15,9 +15,16 @@ node_modules/
 dist/
 build/
 .DS_Store
-*.json
+# Specific JSON ignores
+current_db_schema.json
+agent_*.json
+scratch_*.json
+
+# Allow essential files
 !requirements.txt
 !vercel.json
 !package.json
 !package-lock.json
+!tsconfig.json
+!next.config.js
 !app/**/*.json
