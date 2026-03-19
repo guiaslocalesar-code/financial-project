@@ -7,8 +7,8 @@ import { api, AUTH_URL } from './api'
 import type { User } from '@/types'
 
 const getApiBaseUrl = () => {
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-        return 'https://api.guiaslocales.com.ar'
+    if (typeof window !== 'undefined') {
+        return '' // Use relative path in browser (Vercel proxy handles it)
     }
     return process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:4000'
 }
