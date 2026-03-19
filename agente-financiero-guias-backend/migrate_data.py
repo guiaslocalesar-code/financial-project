@@ -16,24 +16,24 @@ from app.database import Base
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import select
 
-# URLs - USANDO EL PROXY EN EL PUERTO 5433
+# URLs - USANDO EL PUERTO 5434 PARA EVITAR CONFLICTOS
 TARGET_URL = "postgresql+asyncpg://postgres.fumejzkghviszmyfjegg:Finanzas2025!@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
-SOURCE_URL = "postgresql+asyncpg://postgres:GuiasSA2020@127.0.0.1:5433/postgres"
+SOURCE_URL = "postgresql+asyncpg://postgres:GuiasSA2020@127.0.0.1:5434/postgres"
 
 async def main():
-    print("🚀 Iniciando migración de datos vía Proxy...")
+    print("🚀 Iniciando migración de datos vía Proxy (Puerto 5434)...")
     print(f"🔸 Destino: Supabase")
 
     source_engine = create_async_engine(SOURCE_URL)
     target_engine = create_async_engine(TARGET_URL)
 
-    print("\n🔌 Probando conexión al ORIGEN (vía Proxy en localhost:5433)...")
+    print("\n🔌 Probando conexión al ORIGEN (vía Proxy en localhost:5434)...")
     try:
         async with source_engine.connect() as conn:
             print("  ✅ Conexión exitosa!")
     except Exception as e:
         print(f"  ❌ Error de conexión: {e}")
-        print("  💡 Asegúrate de que el comando 'cloud-sql-proxy' esté corriendo.")
+        print("  💡 Asegúrate de que el comando 'cloud-sql-proxy' esté corriendo en el puerto 5434.")
         return
 
     tables = Base.metadata.sorted_tables
