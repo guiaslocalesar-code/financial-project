@@ -15,4 +15,5 @@ current_db_schema.json
 check_*.py
 db_*.py
 *.txt
+!requirements.txt
 *.json
