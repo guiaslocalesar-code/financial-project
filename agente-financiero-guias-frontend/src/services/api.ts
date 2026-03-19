@@ -69,44 +69,44 @@ export const api = {
 
     // ── Finance: Companies ──────────────────────────────────────────────────
     companies: {
-        list: () => financeClient.get('/companies'),
-        get: (id: string) => financeClient.get(`/companies/${id}`),
-        create: (data: any) => financeClient.post('/companies', data),
-        update: (id: string, data: any) => financeClient.put(`/companies/${id}`, data),
+        list: () => financeClient.get('/companies/'),
+        get: (id: string) => financeClient.get(`/companies/${id}/`),
+        create: (data: any) => financeClient.post('/companies/', data),
+        update: (id: string, data: any) => financeClient.put(`/companies/${id}/`, data),
     },
 
     // ── Finance: Clients ────────────────────────────────────────────────────
     clients: {
-        list: (companyId: string) => financeClient.get('/clients', { params: { company_id: companyId } }),
-        get: (id: string) => financeClient.get(`/clients/${id}`),
-        create: (data: any) => financeClient.post('/clients', data),
-        update: (id: string, data: any) => financeClient.put(`/clients/${id}`, data),
+        list: (companyId: string) => financeClient.get('/clients/', { params: { company_id: companyId } }),
+        get: (id: string) => financeClient.get(`/clients/${id}/`),
+        create: (data: any) => financeClient.post('/clients/', data),
+        update: (id: string, data: any) => financeClient.put(`/clients/${id}/`, data),
     },
 
     // ── Finance: Services ───────────────────────────────────────────────────
     services: {
-        list: (companyId: string) => financeClient.get('/services', { params: { company_id: companyId } }),
-        create: (data: any) => financeClient.post('/services', data),
-        update: (id: string, data: any) => financeClient.put(`/services/${id}`, data),
+        list: (companyId: string) => financeClient.get('/services/', { params: { company_id: companyId } }),
+        create: (data: any) => financeClient.post('/services/', data),
+        update: (id: string, data: any) => financeClient.put(`/services/${id}/`, data),
     },
 
     // ── Finance: Invoices ───────────────────────────────────────────────────
     invoices: {
-        list: (companyId: string) => financeClient.get('/invoices', { params: { company_id: companyId } }),
-        create: (data: any) => financeClient.post('/invoices', data),
-        update: (id: string, data: any) => financeClient.put(`/invoices/${id}`, data),
-        emit: (invoiceId: string) => financeClient.post(`/invoices/${invoiceId}/emit`),
+        list: (companyId: string) => financeClient.get('/invoices/', { params: { company_id: companyId } }),
+        create: (data: any) => financeClient.post('/invoices/', data),
+        update: (id: string, data: any) => financeClient.put(`/invoices/${id}/`, data),
+        emit: (invoiceId: string) => financeClient.post(`/invoices/${invoiceId}/emit/`),
     },
 
     // ── Finance: Dashboard ──────────────────────────────────────────────────
     dashboard: {
-        all: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/all', {
+        all: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/all/', {
             params: { company_id: companyId, month, year }
         }),
-        summary: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/summary', { 
+        summary: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/summary/', { 
             params: { company_id: companyId, month, year } 
         }),
-        profitability: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/profitability', { 
+        profitability: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/profitability/', { 
             params: { company_id: companyId, month, year } 
         }),
     },
@@ -114,24 +114,24 @@ export const api = {
     // ── Finance: Budgets ────────────────────────────────────────────────────
     budgets: {
         list: (companyId: string, params?: { month?: number; year?: number }) =>
-            financeClient.get('/budgets', { params: { company_id: companyId, ...params } }),
-        create: (data: any) => financeClient.post('/budgets', data),
-        pay: (budgetId: string) => financeClient.post(`/budgets/${budgetId}/pay`),
+            financeClient.get('/budgets/', { params: { company_id: companyId, ...params } }),
+        create: (data: any) => financeClient.post('/budgets/', data),
+        pay: (budgetId: string) => financeClient.post(`/budgets/${budgetId}/pay/`),
     },
 
     incomeBudgets: {
         list: (companyId: string, params?: { month?: number; year?: number }) =>
-            financeClient.get('/income-budgets', { params: { company_id: companyId, ...params } }),
-        create: (data: any) => financeClient.post('/income-budgets', data),
-        collect: (budgetId: string) => financeClient.post(`/income-budgets/${budgetId}/collect`),
+            financeClient.get('/income-budgets/', { params: { company_id: companyId, ...params } }),
+        create: (data: any) => financeClient.post('/income-budgets/', data),
+        collect: (budgetId: string) => financeClient.post(`/income-budgets/${budgetId}/collect/`),
     },
 
     expenses: {
-        listTypes: (companyId: string) => financeClient.get('/expenses/types', { params: { company_id: companyId } }),
-        createType: (data: any) => financeClient.post('/expenses/types', data),
-        listCategories: (companyId: string, typeId?: string) => 
-            financeClient.get('/expenses/categories', { params: { company_id: companyId, expense_type_id: typeId } }),
-        createCategory: (data: any) => financeClient.post('/expenses/categories', data),
+        list_types: (companyId: string) => financeClient.get('/expenses/types/', { params: { company_id: companyId } }),
+        create_type: (data: any) => financeClient.post('/expenses/types/', data),
+        list_categories: (companyId: string, typeId?: string) => 
+            financeClient.get('/expenses/categories/', { params: { company_id: companyId, expense_type_id: typeId } }),
+        create_category: (data: any) => financeClient.post('/expenses/categories/', data),
     },
 
     transactions: {
@@ -140,8 +140,8 @@ export const api = {
     },
 
     clientServices: {
-        list: (clientId: string) => financeClient.get(`/client-services/${clientId}`),
-        assign: (clientId: string, data: any) => financeClient.post(`/client-services/${clientId}`, data),
+        list: (clientId: string) => financeClient.get(`/client-services/${clientId}/`),
+        assign: (clientId: string, data: any) => financeClient.post(`/client-services/${clientId}/`, data),
     }
 }
 
