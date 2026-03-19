@@ -1,9 +1,10 @@
 """
 Migra los datos de la base de GCP a Supabase.
-Bypas de FKs usando session_replication_role.
+Incluye LIMPIEZA de datos (CUITs, fechas, NULLs).
 """
 import asyncio
 import os
+from datetime import datetime
 from sqlalchemy import create_engine, text, inspect, select
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -34,6 +35,20 @@ TABLE_ORDER = [
     'invoice_items'
 ]
 
+def clean_value(col_name, value):
+    """Limpia valores conflictivos comunes."""
+    if value is None:
+        return None
+    
+    # Quitar .0 de CUITs/Documentos (error común al importar de Excel/Google Sheets)
+    if col_name in ['cuit', 'cuit_cuil_dni', 'cuit_cuil_dni_dni', 'fiscal_id']:
+        s_val = str(value)
+        if s_val.endswith('.0'):
+            return s_val[:-2]
+        return s_val
+    
+    return value
+
 async def migrate_table(table_name, source_conn, target_conn):
     print(f"⏳ Procesando {table_name}...", end=" ", flush=True)
     
@@ -43,10 +58,10 @@ async def migrate_table(table_name, source_conn, target_conn):
         return
 
     try:
-        # Detectar columnas en origen
+        # Detectar columnas
         inspector = inspect(SOURCE_ENGINE_SYNC)
         source_columns = [c['name'] for c in inspector.get_columns(table_name)]
-        target_columns = [c.name for c in table.columns]
+        target_columns = {c.name: c for c in table.columns}
         common_columns = [c for c in target_columns if c in source_columns]
         
         # Leer datos
@@ -54,20 +69,37 @@ async def migrate_table(table_name, source_conn, target_conn):
         result = await source_conn.execute(stmt)
         rows = result.fetchall()
         
-        # Siempre borrar registros previos (el orden ya no importa por el modo replica)
+        # Siempre borrar en destino
         await target_conn.execute(table.delete())
 
         if rows:
+            now = datetime.now()
             data = []
             for row in rows:
                 d = dict(row._mapping)
-                for col in target_columns:
-                    if col not in d:
-                        d[col] = None 
-                data.append(d)
+                # Limpiar y normalizar cada valor
+                clean_d = {}
+                for col, val in d.items():
+                    clean_d[col] = clean_value(col, val)
+                
+                # Rellenar faltantes obligatorios
+                for col_name, col_obj in target_columns.items():
+                    if col_name not in clean_d or clean_d[col_name] is None:
+                        if not col_obj.nullable and not col_obj.primary_key:
+                            # Valores por defecto para campos requeridos
+                            if col_name in ['created_at', 'updated_at', 'planned_date', 'transaction_date', 'issue_date']:
+                                clean_d[col_name] = now
+                            elif col_name == 'is_active':
+                                clean_d[col_name] = True
+                            elif col_name == 'status':
+                                # Intento deducir un status válido basado en defaults del modelo
+                                clean_d[col_name] = col_obj.default.arg if col_obj.default else None
+                            else:
+                                clean_d[col_name] = None
+                data.append(clean_d)
             
             await target_conn.execute(table.insert(), data)
-            print(f"✅ {len(data)} migrados.")
+            print(f"✅ {len(data)} migrados (Limpios).")
         else:
             print("⚠️ Vacía.")
 
@@ -75,21 +107,15 @@ async def migrate_table(table_name, source_conn, target_conn):
         print(f"❌ Error: {e}")
 
 async def main():
-    print("🚀 Iniciando migración de datos (v3 - Bypass FKs)...")
+    print("🚀 Iniciando migración de datos (v4 - Limpieza + Bypass)...")
     source_engine = create_async_engine(SOURCE_URL)
     target_engine = create_async_engine(TARGET_URL)
 
     async with source_engine.connect() as s_conn:
         async with target_engine.begin() as t_conn:
-            # DESACTIVAR FKs TEMPORALMENTE
-            print("🔧 Desactivando restricciones de integridad...")
             await t_conn.execute(text("SET session_replication_role = 'replica';"))
-            
             for table_name in TABLE_ORDER:
                 await migrate_table(table_name, s_conn, t_conn)
-            
-            # REACTIVAR FKs
-            print("🔧 Reactivando restricciones de integridad...")
             await t_conn.execute(text("SET session_replication_role = 'origin';"))
 
     print("\n✨ ¡Migración completada con éxito!")
