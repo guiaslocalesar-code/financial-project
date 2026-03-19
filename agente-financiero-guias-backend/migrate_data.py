@@ -5,6 +5,7 @@ Ejecutar en Cloud Shell:
 """
 import asyncio
 import os
+import traceback
 
 # Variables de entorno para bypass de Pydantic
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres.fumejzkghviszmyfjegg:Finanzas2025!@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
@@ -28,6 +29,16 @@ async def main():
     source_engine = create_async_engine(SOURCE_URL)
     target_engine = create_async_engine(TARGET_URL)
 
+    # Test connection to Source
+    print("\n🔌 Probando conexión al origen...")
+    try:
+        async with source_engine.connect() as conn:
+            print("  ✅ Conexión al origen exitosa.")
+    except Exception as e:
+        print(f"  ❌ Error conectando al ORIGEN: {e}")
+        traceback.print_exc()
+        return
+
     tables = Base.metadata.sorted_tables
     
     for table in tables:
@@ -38,7 +49,7 @@ async def main():
                 rows = result.fetchall()
                 if rows:
                     async with target_engine.begin() as t_conn:
-                        # Limpiar tabla destino antes de insertar para evitar duplicados
+                        # Limpiar tabla destino antes de insertar
                         await t_conn.execute(table.delete())
                         data = [dict(row._mapping) for row in rows]
                         await t_conn.execute(table.insert(), data)
@@ -47,6 +58,7 @@ async def main():
                     print(f"  ⚠️ Tabla vacía en origen, saltando...")
         except Exception as e:
             print(f"  ❌ Error en tabla {table.name}: {e}")
+            traceback.print_exc()
 
     print("\n✨ ¡Migración completada!")
     await source_engine.dispose()
