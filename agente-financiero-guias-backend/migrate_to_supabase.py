@@ -1,4 +1,11 @@
 import asyncio
+import os
+
+# Dummy values to bypass Pydantic validation during migration in Cloud Shell
+os.environ.setdefault("DATABASE_URL", "postgresql://user:pass@localhost/db")
+os.environ.setdefault("SECRET_KEY", "migration_dummy_key")
+os.environ.setdefault("ENCRYPTION_KEY", "hSDDg5gc6wRNz08AzOhfWkWz-lz__Rb_p60iCzdz_qo=")
+
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy import select, text
 from app.database import Base
