@@ -135,8 +135,8 @@ export const api = {
     },
 
     transactions: {
-        list: (companyId: string) => financeClient.get('/transactions', { params: { company_id: companyId } }),
-        get: (id: string) => financeClient.get(`/transactions/${id}`),
+        list: (companyId: string) => financeClient.get('/transactions/', { params: { company_id: companyId } }),
+        get: (id: string) => financeClient.get(`/transactions/${id}/`),
     },
 
     clientServices: {
