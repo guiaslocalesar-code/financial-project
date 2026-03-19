@@ -16,24 +16,24 @@ from app.database import Base
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import select
 
-# URLs - USANDO EL PROXY EN EL PUERTO 5434
+# URLs - USANDO LA BASE CORRECTA: agente_financiero_db
 TARGET_URL = "postgresql+asyncpg://postgres.fumejzkghviszmyfjegg:Finanzas2025!@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
-SOURCE_URL = "postgresql+asyncpg://postgres:FinancialAgent_2026!@127.0.0.1:5434/postgres"
+SOURCE_URL = "postgresql+asyncpg://postgres:FinancialAgent_2026!@127.0.0.1:5434/agente_financiero_db"
 
 async def main():
     print("🚀 Iniciando migración de datos vía Proxy...")
-    print(f"🔹 Origen: GCP (vía Proxy 5434)")
+    print(f"🔹 Origen: GCP (agente_financiero_db)")
     print(f"🔸 Destino: Supabase")
 
     source_engine = create_async_engine(SOURCE_URL)
     target_engine = create_async_engine(TARGET_URL)
 
-    print("\n🔌 Probando conexión al ORIGEN (localhost:5434)...")
+    print("\n🔌 Probando conexión al ORIGEN (agente_financiero_db en localhost:5434)...")
     try:
         async with source_engine.connect() as conn:
-            print("  ✅ Conexión exitosa al origen!")
+            print("  ✅ Conexión exitosa!")
     except Exception as e:
-        print(f"  ❌ Error de conexión al ORIGEN: {e}")
+        print(f"  ❌ Error de conexión: {e}")
         return
 
     tables = Base.metadata.sorted_tables
