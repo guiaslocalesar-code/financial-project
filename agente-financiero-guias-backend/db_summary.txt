@@ -1,0 +1,46 @@
+
+--- TABLE: alembic_version ---
+Columns: version_num
+Sample: {'version_num': '1acf0d653fab'}
+
+--- TABLE: companies ---
+Columns: id, name, cuit, fiscal_condition, afip_cert, afip_key, afip_point_of_sale, is_active, created_at, updated_at
+Sample: {'id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'name': 'Agencia Marketing ', 'cuit': '20324947702', 'fiscal_condition': 'MONOTRIBUTO', 'afip_cert': 'None', 'afip_key': 'None', 'afip_point_of_sale': '3', 'is_active': 'True', 'created_at': '2026-03-07 22:09:15.431037', 'updated_at': '2026-03-10 20:29:06.434549'}
+
+--- TABLE: expense_types ---
+Columns: id, company_id, name, applies_to, is_active, created_at, updated_at
+Sample: {'id': 'adc92130-eba1-4819-8700-e9b336317469', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'name': 'Sueldos', 'applies_to': 'BOTH', 'is_active': 'True', 'created_at': '2026-03-07 22:09:15.431037', 'updated_at': '2026-03-07 22:09:15.431037'}
+
+--- TABLE: expense_categories ---
+Columns: id, company_id, expense_type_id, name, is_active, created_at, updated_at
+Sample: {'id': 'ae2b97e8-9501-4831-b83d-1cc19591f7ef', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'expense_type_id': 'adc92130-eba1-4819-8700-e9b336317469', 'name': 'Junior Account Manager', 'is_active': 'True', 'created_at': '2026-03-07 22:09:15.431037', 'updated_at': '2026-03-07 22:09:15.431037'}
+
+--- TABLE: services ---
+Columns: id, company_id, name, description, is_active, created_at, updated_at
+Sample: {'id': '45311', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'name': 'Google Ads', 'description': 'Gestión Mensual de Google Ads', 'is_active': 'True', 'created_at': '2026-03-09 16:31:34.809782', 'updated_at': '2026-03-09 16:31:34.809782'}
+
+--- TABLE: clients ---
+Columns: id, company_id, name, cuit_cuil_dni, fiscal_condition, email, phone, address, city, province, zip_code, is_active, created_at, updated_at
+Sample: {'id': 'c2', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'name': 'Nabuto', 'cuit_cuil_dni': '20000000000', 'fiscal_condition': 'CONSUMIDOR_FINAL', 'email': 'None', 'phone': 'None', 'address': 'None', 'city': 'None', 'province': 'None', 'zip_code': 'None', 'is_active': 'True', 'created_at': '2026-03-09 16:31:34.809782', 'updated_at': '2026-03-09 16:31:34.809782'}
+
+--- TABLE: client_services ---
+Columns: id, client_id, service_id, monthly_fee, currency, start_date, end_date, status, created_at, updated_at
+Sample: {'id': 'ec2fde2f-9c71-4c63-814a-322c133ff791', 'client_id': 'c2', 'service_id': '45413', 'monthly_fee': '0.00', 'currency': 'ARS', 'start_date': '2025-01-01', 'end_date': 'None', 'status': 'ACTIVE', 'created_at': '2026-03-09 16:31:34.809782', 'updated_at': '2026-03-09 16:31:34.809782'}
+
+--- TABLE: invoice_items ---
+Columns: id, invoice_id, service_id, description, quantity, unit_price, iva_rate, subtotal, created_at
+
+--- TABLE: invoices ---
+Columns: id, company_id, client_id, invoice_type, invoice_number, point_of_sale, cae, cae_expiry, issue_date, due_date, subtotal, iva_rate, iva_amount, total, currency, exchange_rate, status, afip_raw_response, notes, created_at, updated_at
+
+--- TABLE: expense_budgets ---
+Columns: id, company_id, expense_type_id, expense_category_id, description, budgeted_amount, actual_amount, planned_date, period_month, period_year, is_recurring, status, transaction_id, created_at, updated_at
+Sample: {'id': '2af6db90-1abc-4f34-a411-52bdb0e01274', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'expense_type_id': '7d1e74f3-c45c-40a9-a69a-093dad13ce5b', 'expense_category_id': 'f0c1fde0-bedd-443e-b90a-c27cb9e45753', 'description': 'Fijo', 'budgeted_amount': '17000.00', 'actual_amount': '17000.00', 'planned_date': '2025-01-01', 'period_month': '1', 'period_year': '2025', 'is_recurring': 'True', 'status': 'PAID', 'transaction_id': 'None', 'created_at': '2026-03-08 20:09:08.910570', 'updated_at': '2026-03-08 20:09:08.910570'}
+
+--- TABLE: transactions ---
+Columns: id, company_id, client_id, invoice_id, budget_id, service_id, expense_type_id, expense_category_id, type, is_budgeted, expense_origin, amount, currency, exchange_rate, payment_method, description, transaction_date, created_at, updated_at, income_budget_id
+Sample: {'id': 'da1004ea-4524-4697-aa50-34f1440e4328', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'client_id': 'None', 'invoice_id': 'None', 'budget_id': 'None', 'service_id': 'None', 'expense_type_id': 'eb1392f6-7337-4303-a057-a10f44787909', 'expense_category_id': 'acc32de0-6211-4cb8-af60-0375f16a74ea', 'type': 'EXPENSE', 'is_budgeted': 'False', 'expense_origin': 'UNBUDGETED', 'amount': '6500.00', 'currency': 'ARS', 'exchange_rate': '1.0000', 'payment_method': 'OTHER', 'description': 'Variable', 'transaction_date': '2025-05-13', 'created_at': '2026-03-08 20:10:03.097778', 'updated_at': '2026-03-08 20:10:03.097778', 'income_budget_id': 'None'}
+
+--- TABLE: income_budgets ---
+Columns: id, company_id, client_id, service_id, budgeted_amount, actual_amount, planned_date, period_month, period_year, is_recurring, status, transaction_id, notes, created_at, updated_at
+Sample: {'id': '7db32129-39dc-420e-9557-986ddd8dbab3', 'company_id': 'aeb56588-5e15-4ce2-b24b-065ebf842c44', 'client_id': 'c23', 'service_id': '45892', 'budgeted_amount': '45892.00', 'actual_amount': '45892.00', 'planned_date': '2025-01-01', 'period_month': '1', 'period_year': '2025', 'is_recurring': 'True', 'status': 'COLLECTED', 'transaction_id': 'None', 'notes': 'None', 'created_at': '2026-03-08 20:02:59.257746+00:00', 'updated_at': '2026-03-08 20:02:59.257746+00:00'}
