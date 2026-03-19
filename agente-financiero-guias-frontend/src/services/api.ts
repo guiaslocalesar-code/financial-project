@@ -127,11 +127,11 @@ export const api = {
     },
 
     expenses: {
-        list_types: (companyId: string) => financeClient.get('/expenses/types/', { params: { company_id: companyId } }),
-        create_type: (data: any) => financeClient.post('/expenses/types/', data),
-        list_categories: (companyId: string, typeId?: string) => 
+        listTypes: (companyId: string) => financeClient.get('/expenses/types/', { params: { company_id: companyId } }),
+        createType: (data: any) => financeClient.post('/expenses/types/', data),
+        listCategories: (companyId: string, typeId?: string) => 
             financeClient.get('/expenses/categories/', { params: { company_id: companyId, expense_type_id: typeId } }),
-        create_category: (data: any) => financeClient.post('/expenses/categories/', data),
+        createCategory: (data: any) => financeClient.post('/expenses/categories/', data),
     },
 
     transactions: {
