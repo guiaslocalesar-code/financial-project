@@ -10,7 +10,7 @@ from app.utils.validators import validate_cuit, validate_dni
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
-@router.post("/", response_model=ClientResponse)
+@router.post("", response_model=ClientResponse)
 async def create_client(client_in: ClientCreate, db: AsyncSession = Depends(get_db)):
     # Validate CUIT/CUIL/DNI
     doc = client_in.cuit_cuil_dni
@@ -27,7 +27,7 @@ async def create_client(client_in: ClientCreate, db: AsyncSession = Depends(get_
     await db.refresh(client)
     return client
 
-@router.get("/", response_model=list[ClientResponse])
+@router.get("", response_model=list[ClientResponse])
 async def list_clients(
     company_id: str,
     is_active: Optional[bool] = None,
