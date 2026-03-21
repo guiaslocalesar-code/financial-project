@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
-from app.routers import companies, clients, services, client_services, expenses, budgets, invoices, transactions, dashboard, income_budgets, upload
+from app.routers import companies, clients, services, client_services, expenses, budgets, invoices, transactions, dashboard, income_budgets, upload, payment_methods, debts, commissions
 
 app = FastAPI(
     title="Marketing Agency Financial API",
@@ -37,6 +37,9 @@ app.include_router(invoices.router, prefix="/api/v1")
 app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(upload.router, prefix="/api/v1")
+app.include_router(payment_methods.router, prefix="/api/v1")
+app.include_router(debts.router, prefix="/api/v1")
+app.include_router(commissions.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

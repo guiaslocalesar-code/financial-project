@@ -29,3 +29,6 @@ class Company(Base):
     expense_budgets = relationship("ExpenseBudget", back_populates="company")
     income_budgets = relationship("IncomeBudget", back_populates="company")
     transactions = relationship("Transaction", back_populates="company")
+    payment_methods = relationship("PaymentMethod", back_populates="company")
+    debts = relationship("Debt", back_populates="company")
+    commission_recipients = relationship("CommissionRecipient", back_populates="company")

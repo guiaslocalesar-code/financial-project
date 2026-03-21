@@ -142,6 +142,26 @@ export const api = {
     clientServices: {
         list: (clientId: string) => financeClient.get(`/client-services/${clientId}`),
         assign: (clientId: string, data: any) => financeClient.post(`/client-services/${clientId}`, data),
+    },
+    paymentMethods: {
+        list: (companyId: string) => financeClient.get('/payment-methods', { params: { company_id: companyId } }),
+        create: (data: any) => financeClient.post('/payment-methods', data),
+        update: (id: string, data: any) => financeClient.put(`/payment-methods/${id}`, data),
+        delete: (id: string) => financeClient.delete(`/payment-methods/${id}`),
+    },
+    debts: {
+        list: (companyId: string, status?: string) => 
+            financeClient.get('/debts', { params: { company_id: companyId, status } }),
+        get: (id: string) => financeClient.get(`/debts/${id}`),
+        create: (data: any) => financeClient.post('/debts', data),
+        listInstallments: (debtId: string) => financeClient.get(`/debts/${debtId}/installments`),
+        createInstallment: (debtId: string, data: any) => financeClient.post(`/debts/${debtId}/installments`, data),
+    },
+    commissions: {
+        list: (recipientId?: string) => financeClient.get('/commissions', { params: { recipient_id: recipientId } }),
+        listRecipients: (companyId: string) => financeClient.get('/commissions/recipients', { params: { company_id: companyId } }),
+        createRecipient: (data: any) => financeClient.post('/commissions/recipients', data),
+        createRule: (data: any) => financeClient.post('/commissions/rules', data),
     }
 }
 

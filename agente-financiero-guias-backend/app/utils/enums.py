@@ -50,3 +50,21 @@ class PaymentMethod(str, enum.Enum):
     CHECK = "CHECK"
     CARD = "CARD"
     OTHER = "OTHER"
+class PaymentMethodType(str, enum.Enum):
+    BANK = "BANK"
+    CASH = "CASH"
+    CARD = "CARD"
+    OTHER = "OTHER"
+
+class DebtStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
+
+class InterestType(str, enum.Enum):
+    FIXED = "FIXED"
+    VARIABLE = "VARIABLE"
+
+class CommissionStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    PAID = "PAID"
