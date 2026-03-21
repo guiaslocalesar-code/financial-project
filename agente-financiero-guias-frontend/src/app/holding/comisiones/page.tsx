@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserGroupIcon, PlusIcon, PercentBadgeIcon, DocumentTextIcon, BanknotesIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { UserGroupIcon, PlusIcon, DocumentTextIcon, BanknotesIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { clsx } from 'clsx'
 import { api } from '@/services/api'
 import { useHoldingContext } from '@/context/HoldingContext'
@@ -53,7 +53,7 @@ export default function ComisionesPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <PercentBadgeIcon className="w-7 h-7 text-indigo-600" />
+                        <BanknotesIcon className="w-7 h-7 text-indigo-600" />
                         Comisiones y Referidores
                     </h1>
                     <p className="mt-1 text-sm text-gray-500">
@@ -133,7 +133,7 @@ export default function ComisionesPage() {
 
             {activeTab === 'rules' && (
                 <div className="glass-card p-20 text-center">
-                    <PercentBadgeIcon className="mx-auto h-12 w-12 text-gray-300" />
+                    <BanknotesIcon className="mx-auto h-12 w-12 text-gray-300" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">Gestión de Reglas</h3>
                     <p className="mt-1 text-sm text-gray-500">Configurá incentivos porcentuales por cliente o servicio.</p>
                     <div className="mt-6">

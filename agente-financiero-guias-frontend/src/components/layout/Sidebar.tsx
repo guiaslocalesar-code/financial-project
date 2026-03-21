@@ -20,6 +20,7 @@ import {
     WrenchScrewdriverIcon,
     AdjustmentsHorizontalIcon,
     ArrowsRightLeftIcon,
+    CreditCardIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthContext } from '@/context/AuthContext'
 import CompanySelector from './CompanySelector'
@@ -34,11 +35,14 @@ const navigation = [
     { name: 'Gastos', href: '/holding/gastos', icon: CalculatorIcon },
     { name: 'Presupuestos', href: '/holding/presupuestos', icon: ClipboardDocumentListIcon },
     { name: 'Movimientos', href: '/holding/movimientos', icon: ArrowsRightLeftIcon },
+    { name: 'Deudas', href: '/holding/deudas', icon: CreditCardIcon },
+    { name: 'Comisiones', href: '/holding/comisiones', icon: BanknotesIcon },
     { name: 'Reportes', href: '/holding/reportes', icon: ChartBarIcon },
 ]
 
 const adminNavigation = [
     { name: 'Config. Gastos', href: '/holding/configuracion/gastos', icon: AdjustmentsHorizontalIcon },
+    { name: 'Métodos de Pago', href: '/holding/configuracion/metodos-pago', icon: CreditCardIcon },
     { name: 'Configuración', href: '/holding/configuracion', icon: CogIcon },
 ]
 
