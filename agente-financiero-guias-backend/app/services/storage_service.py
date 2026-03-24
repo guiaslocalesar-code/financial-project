@@ -62,13 +62,17 @@ class SupabaseStorageProvider:
 class StorageService:
     def __init__(self):
         if settings.STORAGE_BACKEND == "supabase" and settings.SUPABASE_URL and settings.SUPABASE_KEY:
-            self.provider: StorageProvider = SupabaseStorageProvider(
-                settings.SUPABASE_URL, 
-                settings.SUPABASE_KEY, 
-                settings.SUPABASE_BUCKET
-            )
-        else:
-            self.provider: StorageProvider = LocalStorageProvider()
+            try:
+                self.provider: StorageProvider = SupabaseStorageProvider(
+                    settings.SUPABASE_URL, 
+                    settings.SUPABASE_KEY, 
+                    settings.SUPABASE_BUCKET
+                )
+                return
+            except ImportError:
+                print("WARNING: Supabase library not found. Falling back to local storage.")
+        
+        self.provider: StorageProvider = LocalStorageProvider()
 
     async def upload(self, file: UploadFile, folder: str = "uploads") -> str:
         return await self.provider.upload_file(file, folder)
