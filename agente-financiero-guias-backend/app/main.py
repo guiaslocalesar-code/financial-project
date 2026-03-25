@@ -146,6 +146,15 @@ async def db_health(migrate: bool = False, db = Depends(get_db)):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.get("/inspect/db")
+async def db_inspect(table_name: str, db = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        res = await db.execute(text(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table_name}'"))
+        return {"table": table_name, "columns": [{"name": row[0], "type": row[1]} for row in res]}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
