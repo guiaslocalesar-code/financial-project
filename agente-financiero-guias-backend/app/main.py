@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config import settings
+from app.database import get_db
 from app.routers import companies, clients, services, client_services, expenses, budgets, invoices, transactions, dashboard, income_budgets, upload, payment_methods, debts, commissions
 
 app = FastAPI(
@@ -44,6 +45,15 @@ app.include_router(commissions.router, prefix="/api/v1")
 @app.get("/")
 async def root():
     return {"message": "Marketing Agency Financial API is running", "status": "ok"}
+
+@app.get("/health/db")
+async def db_health(db = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        await db.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
