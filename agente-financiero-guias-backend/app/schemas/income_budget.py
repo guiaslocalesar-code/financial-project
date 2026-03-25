@@ -27,7 +27,7 @@ class IncomeBudgetCollect(BaseModel):
     payment_method: str = "transfer"
 
 class IncomeBudgetResponse(BaseModel):
-    id: str
+    id: UUID
     company_id: UUID
     client_id: str
     service_id: str
