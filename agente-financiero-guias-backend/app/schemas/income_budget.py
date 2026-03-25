@@ -7,9 +7,9 @@ class IncomeBudgetBase(BaseModel):
     company_id: UUID
     client_id: str
     service_id: str
-    amount: float = Field(..., alias="budgeted_amount", validation_alias="budgeted_amount")
+    amount: float = Field(..., serialization_alias="amount", validation_alias="budgeted_amount")
     budgeted_amount: float
-    description: str | None = Field(None, alias="notes", validation_alias="notes")
+    description: str | None = Field(None, serialization_alias="description", validation_alias="notes")
     notes: str | None = None
     planned_date: date
     period_month: int
