@@ -69,8 +69,8 @@ class StorageService:
                     settings.SUPABASE_BUCKET
                 )
                 return
-            except ImportError:
-                print("WARNING: Supabase library not found. Falling back to local storage.")
+            except (ImportError, Exception) as e:
+                print(f"WARNING: Failed to initialize Supabase storage. Falling back to local. Error: {e}")
         
         self.provider: StorageProvider = LocalStorageProvider()
 
