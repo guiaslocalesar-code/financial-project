@@ -159,40 +159,6 @@ async def db_inspect(table_name: str, db = Depends(get_db)):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.get("/debug/income-budgets")
-async def debug_income_budgets(company_id: str, db = Depends(get_db)):
-    import traceback
-    try:
-        from sqlalchemy import text, select
-        from app.models.income_budget import IncomeBudget
-        from app.schemas.income_budget import IncomeBudgetResponse
-        
-        # Step 1: Raw SQL query
-        raw = await db.execute(text(f"SELECT * FROM income_budgets WHERE company_id = '{company_id}' LIMIT 1"))
-        raw_row = raw.mappings().first()
-        if not raw_row:
-            return {"status": "ok", "message": "No rows found", "raw": None}
-        
-        raw_dict = dict(raw_row)
-        # Convert non-serializable types
-        for k, v in raw_dict.items():
-            raw_dict[k] = str(v) if v is not None else None
-        
-        # Step 2: ORM query
-        result = await db.execute(select(IncomeBudget).where(IncomeBudget.company_id == company_id).limit(1))
-        budget = result.scalar_one_or_none()
-        if not budget:
-            return {"status": "ok", "raw": raw_dict, "orm": None}
-        
-        # Step 3: Try serialization
-        try:
-            response = IncomeBudgetResponse.model_validate(budget)
-            return {"status": "ok", "raw": raw_dict, "serialized": response.model_dump(mode='json')}
-        except Exception as ser_err:
-            return {"status": "serialization_error", "raw": raw_dict, "error": str(ser_err), "traceback": traceback.format_exc()}
-    except Exception as e:
-        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
