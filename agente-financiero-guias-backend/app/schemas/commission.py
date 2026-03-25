@@ -4,16 +4,16 @@ from datetime import datetime
 from app.utils.enums import CommissionStatus
 
 class CommissionRuleBase(BaseModel):
-    client_id: UUID | None = None
-    service_id: UUID | None = None
+    client_id: str | None = None
+    service_id: str | None = None
     percentage: float
 
 class CommissionRuleCreate(CommissionRuleBase):
-    recipient_id: UUID
+    recipient_id: str
 
 class CommissionRuleResponse(CommissionRuleBase):
-    id: UUID
-    recipient_id: UUID
+    id: str
+    recipient_id: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -35,7 +35,7 @@ class CommissionRecipientResponse(CommissionRecipientBase):
 
 class CommissionBase(BaseModel):
     transaction_id: UUID
-    recipient_id: UUID
+    recipient_id: str
     amount: float
     status: CommissionStatus = CommissionStatus.PENDING
 

@@ -8,7 +8,7 @@ from app.utils.enums import PaymentMethodType
 class PaymentMethod(Base):
     __tablename__ = "payment_methods"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[PaymentMethodType] = mapped_column(SQLEnum(PaymentMethodType, name="paymentmethodtype"), nullable=False)

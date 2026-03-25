@@ -61,7 +61,7 @@ async def db_health(migrate: bool = False, db = Depends(get_db)):
             # 2. Create 'payment_methods' table
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS payment_methods (
-                    id UUID PRIMARY KEY,
+                    id VARCHAR(50) PRIMARY KEY,
                     company_id UUID NOT NULL REFERENCES companies(id),
                     name VARCHAR(100) NOT NULL,
                     type VARCHAR(20) NOT NULL,
@@ -76,65 +76,69 @@ async def db_health(migrate: bool = False, db = Depends(get_db)):
             """))
             
             # 3. Update 'transactions' table
-            await db.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_method_id UUID REFERENCES payment_methods(id)"))
+            await db.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_method_id VARCHAR(50) REFERENCES payment_methods(id)"))
             
             # 4. Create 'debts' and 'debt_installments'
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS debts (
-                    id UUID PRIMARY KEY,
+                    id VARCHAR(50) PRIMARY KEY,
                     company_id UUID NOT NULL REFERENCES companies(id),
                     description VARCHAR(255) NOT NULL,
                     original_amount NUMERIC(12, 2) NOT NULL,
-                    interest_rate NUMERIC(5, 2) DEFAULT 0,
+                    interest_rate NUMERIC(10, 4) DEFAULT 0,
+                    total_amount NUMERIC(12, 2) NOT NULL,
                     installments INTEGER NOT NULL,
-                    status VARCHAR(20) DEFAULT 'active',
+                    status VARCHAR(20) DEFAULT 'pending',
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """))
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS debt_installments (
-                    id UUID PRIMARY KEY,
-                    debt_id UUID NOT NULL REFERENCES debts(id) ON DELETE CASCADE,
-                    number INTEGER NOT NULL,
+                    id VARCHAR(50) PRIMARY KEY,
+                    debt_id VARCHAR(50) NOT NULL REFERENCES debts(id) ON DELETE CASCADE,
+                    installment_number INTEGER NOT NULL,
                     amount NUMERIC(12, 2) NOT NULL,
                     due_date DATE NOT NULL,
                     status VARCHAR(20) DEFAULT 'pending',
                     transaction_id UUID REFERENCES transactions(id),
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """))
             
             # 5. Create 'commission' tables
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS commission_recipients (
-                    id UUID PRIMARY KEY,
+                    id VARCHAR(50) PRIMARY KEY,
                     company_id UUID NOT NULL REFERENCES companies(id),
                     name VARCHAR(255) NOT NULL,
                     email VARCHAR(255),
                     is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """))
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS commission_rules (
-                    id UUID PRIMARY KEY,
-                    recipient_id UUID NOT NULL REFERENCES commission_recipients(id) ON DELETE CASCADE,
-                    client_id UUID REFERENCES clients(id),
-                    service_id UUID REFERENCES services(id),
+                    id VARCHAR(50) PRIMARY KEY,
+                    recipient_id VARCHAR(50) NOT NULL REFERENCES commission_recipients(id) ON DELETE CASCADE,
+                    client_id VARCHAR(50) REFERENCES clients(id),
+                    service_id VARCHAR(50) REFERENCES services(id),
                     percentage NUMERIC(5, 2) NOT NULL,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """))
             await db.execute(text("""
                 CREATE TABLE IF NOT EXISTS commissions (
-                    id UUID PRIMARY KEY,
+                    id VARCHAR(50) PRIMARY KEY,
                     transaction_id UUID NOT NULL REFERENCES transactions(id),
-                    recipient_id UUID NOT NULL REFERENCES commission_recipients(id),
+                    recipient_id VARCHAR(50) NOT NULL REFERENCES commission_recipients(id),
                     amount NUMERIC(12, 2) NOT NULL,
                     status VARCHAR(20) DEFAULT 'pending',
-                    payout_date TIMESTAMP WITH TIME ZONE,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """))
             

@@ -8,7 +8,7 @@ from app.utils.enums import CommissionStatus
 class CommissionRecipient(Base):
     __tablename__ = "commission_recipients"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -23,10 +23,10 @@ class CommissionRecipient(Base):
 class CommissionRule(Base):
     __tablename__ = "commission_rules"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
-    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), nullable=True)
-    service_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("services.id"), nullable=True)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
+    recipient_id: Mapped[str] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
+    client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=True)
+    service_id: Mapped[str] = mapped_column(ForeignKey("services.id"), nullable=True)
     percentage: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
@@ -39,9 +39,9 @@ class CommissionRule(Base):
 class Commission(Base):
     __tablename__ = "commissions"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id"), nullable=False)
-    recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
+    recipient_id: Mapped[str] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[CommissionStatus] = mapped_column(SQLEnum(CommissionStatus, name="commissionstatus"), default=CommissionStatus.PENDING)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())

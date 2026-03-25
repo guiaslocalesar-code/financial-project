@@ -10,11 +10,11 @@ class DebtInstallmentBase(BaseModel):
     status: DebtStatus = DebtStatus.PENDING
 
 class DebtInstallmentCreate(DebtInstallmentBase):
-    debt_id: UUID
+    debt_id: str
 
 class DebtInstallmentResponse(DebtInstallmentBase):
-    id: UUID
-    debt_id: UUID
+    id: str
+    debt_id: str
     transaction_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
@@ -37,7 +37,7 @@ class DebtUpdate(BaseModel):
     status: DebtStatus | None = None
 
 class DebtResponse(DebtBase):
-    id: UUID
+    id: str
     company_id: UUID
     status: DebtStatus
     created_at: datetime

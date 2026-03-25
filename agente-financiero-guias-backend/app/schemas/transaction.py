@@ -11,6 +11,7 @@ class TransactionBase(BaseModel):
     service_id: str | None = None
     expense_type_id: UUID | None = None
     expense_category_id: UUID | None = None
+    payment_method_id: str | None = None
     type: TransactionType
     is_budgeted: bool = False
     expense_origin: ExpenseOrigin | None = None

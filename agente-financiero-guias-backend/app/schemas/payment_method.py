@@ -24,7 +24,7 @@ class PaymentMethodUpdate(BaseModel):
     is_active: bool | None = None
 
 class PaymentMethodResponse(PaymentMethodBase):
-    id: UUID
+    id: str
     company_id: UUID
     is_active: bool
     created_at: datetime
