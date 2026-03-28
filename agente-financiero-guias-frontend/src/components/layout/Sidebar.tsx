@@ -9,6 +9,7 @@ import {
     HomeIcon,
     BuildingOffice2Icon,
     UsersIcon,
+    UserGroupIcon,
     DocumentTextIcon,
     BanknotesIcon,
     ChartBarIcon,
@@ -41,6 +42,7 @@ const navigation = [
 ]
 
 const adminNavigation = [
+    { name: 'Usuarios y Accesos', href: '/holding/configuracion/usuarios', icon: UserGroupIcon },
     { name: 'Config. Gastos', href: '/holding/configuracion/gastos', icon: AdjustmentsHorizontalIcon },
     { name: 'Métodos de Pago', href: '/holding/configuracion/metodos-pago', icon: CreditCardIcon },
     { name: 'Configuración', href: '/holding/configuracion', icon: CogIcon },

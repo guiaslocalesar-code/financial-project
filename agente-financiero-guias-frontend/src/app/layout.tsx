@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
     title: 'Holding Financial | Panel de Control',
@@ -19,6 +20,7 @@ export default function RootLayout({
             </head>
             <body className="min-h-screen">
                 {children}
+                <Toaster position="top-right" />
             </body>
         </html>
     )
