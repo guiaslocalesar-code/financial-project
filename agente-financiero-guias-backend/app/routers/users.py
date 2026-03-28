@@ -82,36 +82,12 @@ async def invite_user_to_company(
     return rel_res.scalar_one()
 
 @router.post("/debug/companies/{company_id}")
-async def debug_invite_user(
-    company_id: UUID, 
-    invite_data: UserCompanyInvite,
-    db: AsyncSession = Depends(get_db)
-):
+async def debug_invite_user(company_id: UUID, db: AsyncSession = Depends(get_db)):
     try:
-        user_res = await db.execute(select(User).where(User.email == invite_data.email))
-        user = user_res.scalar_one_or_none()
-        if not user:
-            return {"error": "User not found"}
-        
-        link_res = await db.execute(
-            select(UserCompany)
-            .where(UserCompany.user_id == user.id, UserCompany.company_id == company_id)
-        )
-        existing_link = link_res.scalar_one_or_none()
-        
-        if existing_link:
-            return {"error": "Link already exists"}
-            
-        new_uc = UserCompany(
-            user_id=user.id,
-            company_id=company_id,
-            role=invite_data.role,
-            permissions=invite_data.permissions,
-            quotaparte=invite_data.quotaparte
-        )
-        db.add(new_uc)
-        await db.commit()
-        return {"success": True}
+        from sqlalchemy import text
+        res = await db.execute(text("SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name IN ('users', 'user_companies') ORDER BY table_name"))
+        rows = res.fetchall()
+        return {"cols": [{"table": r[0], "col": r[1], "type": r[2]} for r in rows]}
     except Exception as e:
         return {"error": str(e), "tb": traceback.format_exc()}
 
