@@ -9,7 +9,6 @@ from app.database import get_db
 from app.models.user import User
 from app.models.user_company import UserCompany
 from app.schemas.user import UserCompanyResponse, UserCompanyUpdate, UserCompanyCreate, UserCompanyInvite
-import traceback
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -80,18 +79,6 @@ async def invite_user_to_company(
     # Re-fetch with user joined
     rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == new_uc.id))
     return rel_res.scalar_one()
-
-@router.post("/debug/companies/{company_id}")
-async def debug_invite_user(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    try:
-        from sqlalchemy import text
-        res = await db.execute(text("SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name IN ('users', 'user_companies') ORDER BY table_name"))
-        rows = res.fetchall()
-        return {"cols": [{"table": r[0], "col": r[1], "type": r[2]} for r in rows]}
-    except Exception as e:
-        return {"error": str(e), "tb": traceback.format_exc()}
-
-
 
 @router.put("/user-companies/{user_company_id}", response_model=UserCompanyResponse)
 async def update_company_user(
