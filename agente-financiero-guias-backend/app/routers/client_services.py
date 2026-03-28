@@ -27,3 +27,24 @@ async def get_client_services(client_id: str, db: AsyncSession = Depends(get_db)
         .where(ClientService.client_id == client_id)
     )
     return result.scalars().all()
+
+from datetime import date
+from app.utils.enums import ServiceStatus
+
+class ClientServiceAssign(BaseModel):
+    service_id: str
+    monthly_fee: float
+    currency: str = "ARS"
+    start_date: date
+
+@router.post("/{client_id}", response_model=ClientServiceResponse)
+async def assign_service(client_id: str, service_in: ClientServiceAssign, db: AsyncSession = Depends(get_db)):
+    cs = ClientService(
+        client_id=client_id,
+        **service_in.model_dump()
+    )
+    db.add(cs)
+    await db.commit()
+    await db.refresh(cs)
+    return cs
+
