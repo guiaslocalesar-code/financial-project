@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from uuid import UUID
 from app.database import get_db
 from app.models.client_service import ClientService
-from app.schemas.client_service import ClientServiceCreate, ClientServiceResponse
+from app.schemas.client_service import ClientServiceCreate, ClientServiceResponse, ClientServiceUpdate
 
 router = APIRouter(prefix="/client-services", tags=["Client Services"])
 
@@ -47,4 +47,30 @@ async def assign_service(client_id: str, service_in: ClientServiceAssign, db: As
     await db.commit()
     await db.refresh(cs)
     return cs
+
+@router.put("/item/{id}", response_model=ClientServiceResponse)
+async def update_service(id: UUID, service_in: ClientServiceUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ClientService).where(ClientService.id == id))
+    cs = result.scalar_one_or_none()
+    if not cs:
+        raise HTTPException(status_code=404, detail="Client service not found")
+    
+    update_data = service_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(cs, field, value)
+        
+    await db.commit()
+    await db.refresh(cs)
+    return cs
+
+@router.delete("/item/{id}")
+async def delete_service(id: UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ClientService).where(ClientService.id == id))
+    cs = result.scalar_one_or_none()
+    if not cs:
+        raise HTTPException(status_code=404, detail="Client service not found")
+        
+    await db.delete(cs)
+    await db.commit()
+    return {"message": "Service deleted"}
 
