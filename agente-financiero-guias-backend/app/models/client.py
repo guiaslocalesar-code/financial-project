@@ -8,7 +8,7 @@ from app.utils.enums import FiscalCondition
 class Client(Base):
     __tablename__ = "clients"
 
-    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     cuit_cuil_dni: Mapped[str] = mapped_column(String(20), nullable=False)
