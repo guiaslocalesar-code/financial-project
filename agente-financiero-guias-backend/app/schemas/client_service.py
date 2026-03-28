@@ -16,7 +16,10 @@ class ClientServiceCreate(ClientServiceBase):
     pass
 
 class ClientServiceUpdate(BaseModel):
+    service_id: str | None = None
     monthly_fee: float | None = None
+    currency: str | None = None
+    start_date: date | None = None
     status: ServiceStatus | None = None
     end_date: date | None = None
 

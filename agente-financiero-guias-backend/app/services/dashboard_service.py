@@ -34,21 +34,26 @@ class DashboardService:
         total_expenses = expense_res.scalar() or 0.0
 
         # Commissions (added to Total Expenses)
-        from app.models.commission import Commission, CommissionRecipient
-        from app.utils.enums import CommissionStatus
-        
-        comm_res = await db.execute(
-            select(func.sum(Commission.amount))
-            .select_from(Commission)
-            .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
-            .where(
-                CommissionRecipient.company_id == company_id,
-                Commission.status == CommissionStatus.PAID,
-                func.extract('month', Commission.updated_at) == month,
-                func.extract('year', Commission.updated_at) == year
+        total_commissions = 0.0
+        try:
+            from app.models.commission import Commission, CommissionRecipient
+            from app.utils.enums import CommissionStatus
+            
+            comm_res = await db.execute(
+                select(func.sum(Commission.amount))
+                .select_from(Commission)
+                .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
+                .where(
+                    CommissionRecipient.company_id == company_id,
+                    Commission.status == CommissionStatus.PAID,
+                    func.extract('month', Commission.updated_at) == month,
+                    func.extract('year', Commission.updated_at) == year
+                )
             )
-        )
-        total_commissions = comm_res.scalar() or 0.0
+            total_commissions = comm_res.scalar() or 0.0
+        except Exception as e:
+            print(f"Error querying commissions: {e}")
+        
         total_expenses += float(total_commissions)
 
         # Pending to Pay

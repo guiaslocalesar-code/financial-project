@@ -20,7 +20,6 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: UUID
-    google_id: Optional[str] = None
     last_login: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

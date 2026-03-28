@@ -1,34 +1,38 @@
 import asyncio
-from sqlalchemy import inspect
-from sqlalchemy.ext.asyncio import create_async_engine
-from app.config import settings
+from sqlalchemy import text
+import sys
+import os
 
-async def inspect_db():
-    print(f"Inspecting DB: {settings.async_database_url}")
-    engine = create_async_engine(settings.async_database_url)
-    
-    try:
-        async with engine.connect() as conn:
-            print("Connected! Inspecting tables...")
-            # Unfortunately, inspect() is typically synchronous. 
-            # We can use it with run_sync.
-            def get_tables(connection):
-                inspector = inspect(connection)
-                return inspector.get_table_names()
-            
-            tables = await conn.run_sync(get_tables)
-            print(f"Tables: {tables}")
-            
-            if "transactions" in tables:
-                def get_cols(connection):
-                    inspector = inspect(connection)
-                    return [c['name'] for c in inspector.get_columns("transactions")]
-                cols = await conn.run_sync(get_cols)
-                print(f"Columns in 'transactions': {cols}")
-    except Exception as e:
-        print(f"Error during inspection: {e}")
-    finally:
-        await engine.dispose()
+# Ensure backend folder is in sys.path
+sys.path.append(os.getcwd())
 
-if __name__ == "__main__":
-    asyncio.run(inspect_db())
+from app.database import engine
+
+async def inspect():
+    async with engine.connect() as conn:
+        print("--- TABLES IN PUBLIC SCHEMA ---")
+        res = await conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public'"))
+        tables = [r[0] for r in res.fetchall()]
+        print(f"Tables: {tables}")
+        
+        for t in ['users', 'company_users', 'profiles', 'roles', 'user_roles']:
+            if t in tables:
+                print(f"--- COLUMNS IN {t} ---")
+                res = await conn.execute(text(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name='{t}'"))
+                cols = [f"- {r[0]} ({r[1]})" for r in res.fetchall()]
+                print("\n".join(cols))
+                
+        print("--- TABLES IN AUTH SCHEMA ---")
+        try:
+            res = await conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='auth'"))
+            auth_tables = [r[0] for r in res.fetchall()]
+            print(f"Auth Tables: {auth_tables}")
+            if 'users' in auth_tables:
+                print("--- COLUMNS IN auth.users ---")
+                res = await conn.execute(text("SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='auth' AND table_name='users'"))
+                cols = [f"- {r[0]} ({r[1]})" for r in res.fetchall()]
+                print("\n".join(cols))
+        except Exception as e:
+            print(f"Could not read auth schema: {e}")
+
+asyncio.run(inspect())
