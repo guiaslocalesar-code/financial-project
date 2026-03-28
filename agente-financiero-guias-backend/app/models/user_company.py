@@ -12,7 +12,7 @@ class UserCompany(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
-    role: Mapped[CompanyRole] = mapped_column(SQLEnum(CompanyRole, name="companyrole"), default=CompanyRole.USER)
+    role: Mapped[CompanyRole] = mapped_column(SQLEnum(CompanyRole, native_enum=False, length=50), default=CompanyRole.USER)
     
     # Lista JSON de permisos granulares exactos
     permissions = mapped_column(JSONB, nullable=True)
