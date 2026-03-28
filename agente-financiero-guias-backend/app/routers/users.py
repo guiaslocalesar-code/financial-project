@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.user_company import UserCompany
 from app.schemas.user import UserCompanyResponse, UserCompanyUpdate, UserCompanyCreate, UserCompanyInvite
+import traceback
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -35,50 +36,58 @@ async def invite_user_to_company(
     Invita a un usuario (por email) a un negocio. Si el usuario no existe en la BD global de Supabase, falla.
     Si ya posee acceso al negocio, lanza error 400.
     """
-    # 1. Check if user exists by email
-    user_res = await db.execute(select(User).where(User.email == invite_data.email))
-    user = user_res.scalar_one_or_none()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="El usuario no se ha registrado en el sistema web. Primero debe iniciar sesión.")
-    
-    # 2. Check if already linked to this company
-    link_res = await db.execute(
-        select(UserCompany)
-        .where(UserCompany.user_id == user.id, UserCompany.company_id == company_id)
-    )
-    existing_link = link_res.scalar_one_or_none()
-    
-    if existing_link:
-        if existing_link.is_active:
-            raise HTTPException(status_code=400, detail="El usuario ya pertenece a esta empresa")
-        else:
-            # Re-activate user
-            existing_link.is_active = True
-            existing_link.role = invite_data.role
-            existing_link.permissions = invite_data.permissions
-            existing_link.quotaparte = invite_data.quotaparte
-            await db.commit()
-            await db.refresh(existing_link)
-            # Re-fetch with joined user
-            rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == existing_link.id))
-            return rel_res.scalar_one()
+    try:
+        # 1. Check if user exists by email
+        user_res = await db.execute(select(User).where(User.email == invite_data.email))
+        user = user_res.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="El usuario no se ha registrado en el sistema web. Primero debe iniciar sesión.")
+        
+        # 2. Check if already linked to this company
+        link_res = await db.execute(
+            select(UserCompany)
+            .where(UserCompany.user_id == user.id, UserCompany.company_id == company_id)
+        )
+        existing_link = link_res.scalar_one_or_none()
+        
+        if existing_link:
+            if existing_link.is_active:
+                raise HTTPException(status_code=400, detail="El usuario ya pertenece a esta empresa")
+            else:
+                # Re-activate user
+                existing_link.is_active = True
+                existing_link.role = invite_data.role
+                existing_link.permissions = invite_data.permissions
+                existing_link.quotaparte = invite_data.quotaparte
+                await db.commit()
+                await db.refresh(existing_link)
+                # Re-fetch with joined user
+                rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == existing_link.id))
+                return rel_res.scalar_one()
 
-    # 3. Create new link
-    new_uc = UserCompany(
-        user_id=user.id,
-        company_id=company_id,
-        role=invite_data.role,
-        permissions=invite_data.permissions,
-        quotaparte=invite_data.quotaparte
-    )
-    db.add(new_uc)
-    await db.commit()
-    await db.refresh(new_uc)
-    
-    # Re-fetch with user joined
-    rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == new_uc.id))
-    return rel_res.scalar_one()
+        # 3. Create new link
+        new_uc = UserCompany(
+            user_id=user.id,
+            company_id=company_id,
+            role=invite_data.role,
+            permissions=invite_data.permissions,
+            quotaparte=invite_data.quotaparte
+        )
+        db.add(new_uc)
+        await db.commit()
+        await db.refresh(new_uc)
+        
+        # Re-fetch with user joined
+        rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == new_uc.id))
+        return rel_res.scalar_one()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"{str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=400, detail=error_msg)
+
 
 @router.put("/user-companies/{user_company_id}", response_model=UserCompanyResponse)
 async def update_company_user(
