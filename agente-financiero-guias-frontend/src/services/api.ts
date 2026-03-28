@@ -142,6 +142,8 @@ export const api = {
     clientServices: {
         list: (clientId: string) => financeClient.get(`/client-services/${clientId}`),
         assign: (clientId: string, data: any) => financeClient.post(`/client-services/${clientId}`, data),
+        update: (id: string, data: any) => financeClient.put(`/client-services/item/${id}`, data),
+        remove: (id: string) => financeClient.delete(`/client-services/item/${id}`),
     },
     paymentMethods: {
         list: (companyId: string) => financeClient.get('/payment-methods', { params: { company_id: companyId } }),

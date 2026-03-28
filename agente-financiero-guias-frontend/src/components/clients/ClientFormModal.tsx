@@ -30,6 +30,7 @@ const clientSchema = z.object({
     imagen: z.string().url('URL inválida').or(z.literal('')).optional(),
     is_active: z.boolean(),
     services: z.array(z.object({
+        id: z.string().optional(),
         service_id: z.string().min(1, 'El servicio es requerido'),
         monthly_fee: z.coerce.number().min(0, 'El monto debe ser positivo'),
         currency: z.enum(['ARS', 'USD']),
@@ -96,7 +97,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
             const res = await api.clientServices.list(client.id)
             return (Array.isArray(res.data) ? res.data : (res.data.data || [])) as ClientService[]
         },
-        enabled: !!client?.id && isOpen && isViewMode,
+        enabled: !!client?.id && isOpen,
     })
 
     useEffect(() => {
@@ -130,6 +131,19 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
         }
     }, [client, isOpen, reset])
 
+    useEffect(() => {
+        if (client && isOpen && !isViewMode && clientServices) {
+            const mappedServices = clientServices.map(cs => ({
+                id: cs.id,
+                service_id: cs.service_id,
+                monthly_fee: cs.monthly_fee,
+                currency: cs.currency || 'ARS',
+                start_date: String(cs.start_date).split('T')[0]
+            }))
+            reset((formValues: any) => ({ ...formValues, services: mappedServices }))
+        }
+    }, [client, isOpen, isViewMode, clientServices, reset])
+
     const mutation = useMutation({
         mutationFn: (data: ClientFormData) => {
             if (!selectedCompany) throw new Error('No company selected')
@@ -162,20 +176,43 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
             const createdClient = response.data.data || response.data
             const clientId = createdClient.id || (isEditing && client?.id)
 
-            // Assign newly added services
+            const submittedServiceIds = (variables.services || []).map(s => s.id).filter(Boolean)
+            const originalServiceIds = (clientServices || []).map(cs => cs.id)
+            
+            // Find deleted services
+            const deletedServiceIds = originalServiceIds.filter(id => !submittedServiceIds.includes(id))
+            
+            // Execute deletions
+            for (const id of deletedServiceIds) {
+                try {
+                    await api.clientServices.remove(id)
+                } catch (err) {
+                    console.error(`Error deleting service ${id}:`, err)
+                }
+            }
+
+            // Assign or update services
             if (variables.services && variables.services.length > 0) {
                 for (const service of variables.services) {
                     try {
-                        await api.clientServices.assign(clientId, {
-                            service_id: service.service_id,
-                            monthly_fee: service.monthly_fee,
-                            currency: service.currency,
-                            start_date: service.start_date
-                        })
+                        if (service.id) {
+                            await api.clientServices.update(service.id, {
+                                service_id: service.service_id,
+                                monthly_fee: service.monthly_fee,
+                                currency: service.currency,
+                                start_date: service.start_date
+                            })
+                        } else {
+                            await api.clientServices.assign(clientId, {
+                                service_id: service.service_id,
+                                monthly_fee: service.monthly_fee,
+                                currency: service.currency,
+                                start_date: service.start_date
+                            })
+                        }
                     } catch (err) {
-                        console.error(`Error assigning service ${service.service_id}:`, err)
-                        // Toast/Alert already mentioned in task to show error without reverting
-                        alert(`Error al asignar el servicio. El cliente fue creado pero algunos servicios fallaron.`)
+                        console.error(`Error saving service ${service.service_id}:`, err)
+                        alert(`Error al guardar un servicio.`)
                     }
                 }
             }
@@ -514,7 +551,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
                                             {/* Services Section */}
                                             <div className="sm:col-span-2 mt-6 pt-6 border-t border-gray-100">
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <h4 className="text-sm font-semibold text-gray-900">{isEditing ? 'Agregar nuevos servicios' : 'Servicios contratados'}</h4>
+                                                    <h4 className="text-sm font-semibold text-gray-900">Servicios contratados</h4>
                                                         <button
                                                             type="button"
                                                             onClick={() => append({ service_id: '', monthly_fee: 0, currency: 'ARS', start_date: new Date().toISOString().split('T')[0] })}
@@ -597,7 +634,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
                                                         ))}
                                                     {fields.length === 0 && (
                                                         <div className="text-center py-6 px-4 border-2 border-dashed border-gray-100 rounded-xl">
-                                                            <p className="text-xs text-gray-400 italic">{isEditing ? 'No se han agregado servicios nuevos en esta edición.' : 'No se han asignado servicios para el alta del cliente.'}</p>
+                                                            <p className="text-xs text-gray-400 italic">No se han asignado servicios al cliente.</p>
                                                         </div>
                                                     )}
                                                 </div>
