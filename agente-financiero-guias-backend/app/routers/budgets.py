@@ -8,18 +8,20 @@ from app.models.expense_budget import ExpenseBudget
 from app.models.transaction import Transaction
 from app.utils.enums import BudgetStatus, TransactionType
 
+from app.schemas.expense_budget import ExpenseBudgetCreate, ExpenseBudgetResponse
+
 router = APIRouter(prefix="/budgets", tags=["Expense Budgets"])
 
-@router.post("")
-async def create_budget(budget_in: dict, db: AsyncSession = Depends(get_db)):
-    # Simple dict for now, should use schema
-    budget = ExpenseBudget(**budget_in)
+@router.post("", response_model=ExpenseBudgetResponse)
+async def create_budget(budget_in: ExpenseBudgetCreate, db: AsyncSession = Depends(get_db)):
+    # We now use Pydantic schema which parses strings to UUID/Date automatically
+    budget = ExpenseBudget(**budget_in.model_dump())
     db.add(budget)
     await db.commit()
     await db.refresh(budget)
     return budget
 
-@router.get("")
+@router.get("", response_model=list[ExpenseBudgetResponse])
 async def list_budgets(
     company_id: UUID, 
     month: int | None = Query(None, ge=1, le=12), 
