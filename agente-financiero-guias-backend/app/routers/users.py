@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.user_company import UserCompany
 from app.schemas.user import UserCompanyResponse, UserCompanyUpdate, UserCompanyCreate, UserCompanyInvite
+import traceback
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -79,6 +80,41 @@ async def invite_user_to_company(
     # Re-fetch with user joined
     rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == new_uc.id))
     return rel_res.scalar_one()
+
+@router.post("/debug/companies/{company_id}")
+async def debug_invite_user(
+    company_id: UUID, 
+    invite_data: UserCompanyInvite,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        user_res = await db.execute(select(User).where(User.email == invite_data.email))
+        user = user_res.scalar_one_or_none()
+        if not user:
+            return {"error": "User not found"}
+        
+        link_res = await db.execute(
+            select(UserCompany)
+            .where(UserCompany.user_id == user.id, UserCompany.company_id == company_id)
+        )
+        existing_link = link_res.scalar_one_or_none()
+        
+        if existing_link:
+            return {"error": "Link already exists"}
+            
+        new_uc = UserCompany(
+            user_id=user.id,
+            company_id=company_id,
+            role=invite_data.role,
+            permissions=invite_data.permissions,
+            quotaparte=invite_data.quotaparte
+        )
+        db.add(new_uc)
+        await db.commit()
+        return {"success": True}
+    except Exception as e:
+        return {"error": str(e), "tb": traceback.format_exc()}
+
 
 
 @router.put("/user-companies/{user_company_id}", response_model=UserCompanyResponse)
