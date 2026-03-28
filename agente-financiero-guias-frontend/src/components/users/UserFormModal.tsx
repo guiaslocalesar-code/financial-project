@@ -6,6 +6,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useForm, Controller } from 'react-hook-form'
 import { api } from '@/services/api'
 import { toast } from 'react-hot-toast'
+import { useHoldingContext } from '@/context/HoldingContext'
 
 interface UserFormModalProps {
     isOpen: boolean
@@ -28,11 +29,13 @@ const AVAILABLE_PERMISSIONS = [
 
 export default function UserFormModal({ isOpen, onClose, companyId, onSuccess, editData }: UserFormModalProps) {
     const isEdit = !!editData
+    const { companies } = useHoldingContext()
 
     const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm({
         defaultValues: {
             email: '',
             role: 'user',
+            company_id: companyId || '',
             permissions: [] as string[],
             quotaparte: ''
         }
@@ -44,17 +47,19 @@ export default function UserFormModal({ isOpen, onClose, companyId, onSuccess, e
                 reset({
                     email: editData.user?.email || '',
                     role: editData.role || 'user',
+                    company_id: editData.company_id || companyId || '',
                     permissions: editData.permissions || [],
                     quotaparte: editData.quotaparte || ''
                 })
             } else {
-                reset({ email: '', role: 'user', permissions: [], quotaparte: '' })
+                reset({ email: '', role: 'user', company_id: companyId || '', permissions: [], quotaparte: '' })
             }
         }
-    }, [isOpen, editData, reset])
+    }, [isOpen, editData, reset, companyId])
 
     const onSubmit = async (data: any) => {
-        if (!companyId) return
+        const targetCompanyId = isEdit ? companyId : data.company_id
+        if (!targetCompanyId) return
 
         try {
             const payload = {
@@ -69,7 +74,7 @@ export default function UserFormModal({ isOpen, onClose, companyId, onSuccess, e
                 await api.users.updateRole(editData.id, payload)
                 toast.success('Permisos actualizados exitosamente')
             } else {
-                await api.users.inviteUser(companyId, payload)
+                await api.users.inviteUser(data.company_id, payload)
                 toast.success('Usuario invitado exitosamente')
             }
             onSuccess()
@@ -137,17 +142,34 @@ export default function UserFormModal({ isOpen, onClose, companyId, onSuccess, e
                                     <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5 px-4">
                                         
                                         {!isEdit && (
-                                            <div>
-                                                <label className="block text-sm font-medium leading-6 text-gray-900">
-                                                    Email del Usuario <span className="text-red-500">*</span>
-                                                </label>
-                                                <div className="mt-2">
-                                                    <input
-                                                        type="email"
-                                                        disabled={isEdit}
-                                                        {...register('email', { required: 'El email es requerido' })}
-                                                        className="block w-full rounded-xl border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                    />
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium leading-6 text-gray-900">
+                                                        Email del Usuario <span className="text-red-500">*</span>
+                                                    </label>
+                                                    <div className="mt-2">
+                                                        <input
+                                                            type="email"
+                                                            disabled={isEdit}
+                                                            {...register('email', { required: 'El email es requerido' })}
+                                                            className="block w-full rounded-xl border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium leading-6 text-gray-900">
+                                                        Empresa Destino
+                                                    </label>
+                                                    <div className="mt-2">
+                                                        <select
+                                                            {...register('company_id')}
+                                                            className="block w-full rounded-xl border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                        >
+                                                            {companies.map(c => (
+                                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
