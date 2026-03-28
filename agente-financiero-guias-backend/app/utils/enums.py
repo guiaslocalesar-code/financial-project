@@ -1,5 +1,11 @@
 import enum
 
+class CompanyRole(str, enum.Enum):
+    ADMIN = "admin"
+    USER = "user"
+    OWNER = "owner"
+    ACCOUNTANT = "accountant"
+
 class FiscalCondition(str, enum.Enum):
     RI = "RI"
     MONOTRIBUTO = "MONOTRIBUTO"

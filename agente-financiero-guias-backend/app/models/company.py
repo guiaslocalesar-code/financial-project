@@ -32,3 +32,4 @@ class Company(Base):
     payment_methods = relationship("PaymentMethod", back_populates="company")
     debts = relationship("Debt", back_populates="company")
     commission_recipients = relationship("CommissionRecipient", back_populates="company")
+    user_companies = relationship("UserCompany", back_populates="company")
