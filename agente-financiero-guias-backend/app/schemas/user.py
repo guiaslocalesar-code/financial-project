@@ -37,6 +37,13 @@ class UserCompanyCreate(UserCompanyBase):
     user_id: UUID
     company_id: UUID
 
+class UserCompanyInvite(BaseModel):
+    email: EmailStr
+    role: CompanyRole = CompanyRole.USER
+    permissions: Optional[List[str]] = None
+    quotaparte: Optional[float] = None
+
+
 class UserCompanyUpdate(BaseModel):
     role: Optional[CompanyRole] = None
     permissions: Optional[List[str]] = None
