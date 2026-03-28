@@ -17,9 +17,10 @@ class ClientBase(BaseModel):
     imagen: str | None = None
 
 class ClientCreate(ClientBase):
-    pass
+    id: str | None = Field(None, max_length=50)
 
 class ClientUpdate(BaseModel):
+    id: str | None = Field(None, max_length=50)
     name: str | None = None
     cuit_cuil_dni: str | None = None
     fiscal_condition: FiscalCondition | None = None
