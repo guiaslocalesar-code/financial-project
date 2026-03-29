@@ -9,32 +9,42 @@ from app.utils.enums import TransactionType, BudgetStatus
 
 class DashboardService:
     async def get_summary(self, company_id: UUID, month: int, year: int, db: AsyncSession):
+        total_income = 0.0
+        total_expenses = 0.0
+        total_commissions = 0.0
+        pending_to_pay = 0.0
+
         # Total Income
-        income_res = await db.execute(
-            select(func.sum(Transaction.amount))
-            .where(
-                Transaction.company_id == company_id,
-                Transaction.type == TransactionType.INCOME,
-                func.extract('month', Transaction.transaction_date) == month,
-                func.extract('year', Transaction.transaction_date) == year
+        try:
+            income_res = await db.execute(
+                select(func.sum(Transaction.amount))
+                .where(
+                    Transaction.company_id == company_id,
+                    Transaction.type == TransactionType.INCOME,
+                    func.extract('month', Transaction.transaction_date) == month,
+                    func.extract('year', Transaction.transaction_date) == year
+                )
             )
-        )
-        total_income = income_res.scalar() or 0.0
+            total_income = float(income_res.scalar() or 0.0)
+        except Exception as e:
+            print(f"Error querying income: {e}")
 
         # Total Expenses
-        expense_res = await db.execute(
-            select(func.sum(Transaction.amount))
-            .where(
-                Transaction.company_id == company_id,
-                Transaction.type == TransactionType.EXPENSE,
-                func.extract('month', Transaction.transaction_date) == month,
-                func.extract('year', Transaction.transaction_date) == year
+        try:
+            expense_res = await db.execute(
+                select(func.sum(Transaction.amount))
+                .where(
+                    Transaction.company_id == company_id,
+                    Transaction.type == TransactionType.EXPENSE,
+                    func.extract('month', Transaction.transaction_date) == month,
+                    func.extract('year', Transaction.transaction_date) == year
+                )
             )
-        )
-        total_expenses = expense_res.scalar() or 0.0
+            total_expenses = float(expense_res.scalar() or 0.0)
+        except Exception as e:
+            print(f"Error querying expenses: {e}")
 
         # Commissions (added to Total Expenses)
-        total_commissions = 0.0
         try:
             from app.models.commission import Commission, CommissionRecipient
             from app.utils.enums import CommissionStatus
@@ -50,27 +60,26 @@ class DashboardService:
                     func.extract('year', Commission.updated_at) == year
                 )
             )
-            total_commissions = comm_res.scalar() or 0.0
+            total_commissions = float(comm_res.scalar() or 0.0)
         except Exception as e:
             print(f"Error querying commissions: {e}")
         
-        total_expenses += float(total_commissions)
+        total_expenses += total_commissions
 
         # Pending to Pay
-        pending_res = await db.execute(
-            select(func.sum(ExpenseBudget.budgeted_amount))
-            .where(
-                ExpenseBudget.company_id == company_id,
-                ExpenseBudget.status == BudgetStatus.PENDING,
-                ExpenseBudget.period_month == month,
-                ExpenseBudget.period_year == year
+        try:
+            pending_res = await db.execute(
+                select(func.sum(ExpenseBudget.budgeted_amount))
+                .where(
+                    ExpenseBudget.company_id == company_id,
+                    ExpenseBudget.status == BudgetStatus.PENDING,
+                    ExpenseBudget.period_month == month,
+                    ExpenseBudget.period_year == year
+                )
             )
-        )
-        pending_to_pay = pending_res.scalar() or 0.0
-
-        total_income = float(total_income)
-        total_expenses = float(total_expenses)
-        pending_to_pay = float(pending_to_pay)
+            pending_to_pay = float(pending_res.scalar() or 0.0)
+        except Exception as e:
+            print(f"Error querying pending: {e}")
 
         return {
             "total_income": total_income,
