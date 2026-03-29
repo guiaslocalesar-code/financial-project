@@ -32,7 +32,7 @@ class TransactionUpdate(BaseModel):
     transaction_date: date | None = None
 
 class TransactionResponse(TransactionBase):
-    id: str
+    id: str | UUID
     created_at: datetime
     updated_at: datetime
 
