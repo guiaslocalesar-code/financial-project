@@ -9,11 +9,11 @@ class CommissionRuleBase(BaseModel):
     percentage: float
 
 class CommissionRuleCreate(CommissionRuleBase):
-    recipient_id: str
+    recipient_id: str | UUID
 
 class CommissionRuleResponse(CommissionRuleBase):
-    id: str
-    recipient_id: str
+    id: str | UUID
+    recipient_id: str | UUID
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -26,7 +26,7 @@ class CommissionRecipientCreate(CommissionRecipientBase):
     company_id: UUID
 
 class CommissionRecipientResponse(CommissionRecipientBase):
-    id: str
+    id: str | UUID
     company_id: UUID
     created_at: datetime
     rules: list[CommissionRuleResponse] = []
@@ -34,13 +34,13 @@ class CommissionRecipientResponse(CommissionRecipientBase):
     model_config = ConfigDict(from_attributes=True)
 
 class CommissionBase(BaseModel):
-    transaction_id: UUID
-    recipient_id: str
+    transaction_id: str | UUID
+    recipient_id: str | UUID
     amount: float
     status: CommissionStatus = CommissionStatus.PENDING
 
 class CommissionResponse(CommissionBase):
-    id: str
+    id: str | UUID
     created_at: datetime
     updated_at: datetime
 
