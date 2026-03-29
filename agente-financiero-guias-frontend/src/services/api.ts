@@ -160,8 +160,10 @@ export const api = {
         createInstallment: (debtId: string, data: any) => financeClient.post(`/debts/${debtId}/installments`, data),
     },
     commissions: {
-        list: (recipientId?: string) => financeClient.get('/commissions', { params: { recipient_id: recipientId } }),
+        list: (companyId: string, recipientId?: string) => 
+            financeClient.get('/commissions', { params: { company_id: companyId, recipient_id: recipientId } }),
         listRecipients: (companyId: string) => financeClient.get('/commissions/recipients', { params: { company_id: companyId } }),
+        listRules: (companyId: string) => financeClient.get('/commissions/rules', { params: { company_id: companyId } }),
         createRecipient: (data: any) => financeClient.post('/commissions/recipients', data),
         createRule: (data: any) => financeClient.post('/commissions/rules', data),
     },

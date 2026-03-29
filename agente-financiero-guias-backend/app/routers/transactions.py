@@ -13,14 +13,11 @@ async def list_transactions(company_id: UUID, db: AsyncSession = Depends(get_db)
     result = await db.execute(select(Transaction).where(Transaction.company_id == company_id).order_by(Transaction.transaction_date.desc()))
     transactions = list(result.scalars().all())
 
-    from fastapi.responses import JSONResponse
-    import traceback
+    # Fetch PAID commissions for this company to merge them as pseudo-transactions
+    from app.models.commission import Commission, CommissionRecipient
+    from app.utils.enums import CommissionStatus, TransactionType
 
     try:
-        # Fetch PAID commissions for this company to merge them as pseudo-transactions
-        from app.models.commission import Commission, CommissionRecipient
-        from app.utils.enums import CommissionStatus, TransactionType
-
         comm_query = (
             select(Commission, CommissionRecipient)
             .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
@@ -32,42 +29,46 @@ async def list_transactions(company_id: UUID, db: AsyncSession = Depends(get_db)
         comm_result = await db.execute(comm_query)
         rows = comm_result.all()
         
-        # Create Pydantic-compatible objects or dicts for the commissions
-        class PseudoTransaction:
-            def __init__(self, c: Commission, r: CommissionRecipient, comp_id: UUID):
-                self.id = str(c.id)
-                self.company_id = comp_id
-                self.client_id = None
-                self.invoice_id = None
-                self.budget_id = None
-                self.service_id = None
-                self.expense_type_id = None
-                self.expense_category_id = None
-                self.payment_method_id = None
-                self.type = TransactionType.EXPENSE
-                self.is_budgeted = False
-                self.expense_origin = None
-                self.amount = float(c.amount)
-                self.currency = "ARS"
-                self.exchange_rate = 1.0
-                self.payment_method = None
-                self.description = f"Pago de comisión a {r.name}"
-                # Use updated_at as the date of payment
-                self.transaction_date = c.updated_at.date() if c.updated_at else c.created_at.date()
-                self.created_at = c.created_at
-                self.updated_at = c.updated_at
-
         for row in rows:
-            comm = row[0]
-            rec = row[1]
-            transactions.append(PseudoTransaction(comm, rec, company_id))
+            c = row[0]
+            r = row[1]
+            
+            # Map values explicitly to a dictionary for Pydantic to pick it up easily
+            pseudo_tx = {
+                "id": f"comm_{c.id}",
+                "company_id": company_id,
+                "client_id": None,
+                "invoice_id": None,
+                "budget_id": None,
+                "service_id": None,
+                "expense_type_id": None,
+                "expense_category_id": None,
+                "payment_method_id": None,
+                "type": TransactionType.EXPENSE,
+                "is_budgeted": False,
+                "expense_origin": None,
+                "amount": float(c.amount),
+                "currency": "ARS",
+                "exchange_rate": 1.0,
+                "payment_method": None,
+                "description": f"Pago de comisión a {r.name}",
+                "transaction_date": c.updated_at.date() if c.updated_at else c.created_at.date(),
+                "created_at": c.created_at,
+                "updated_at": c.updated_at
+            }
+            transactions.append(pseudo_tx)
 
         # Re-sort by date descending
-        transactions.sort(key=lambda x: x.transaction_date, reverse=True)
+        def get_date(x):
+            if isinstance(x, dict):
+                return x["transaction_date"]
+            return x.transaction_date
 
-        return transactions
+        transactions.sort(key=get_date, reverse=True)
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e), "traceback": traceback.format_exc()})
+        print(f"Error merging commissions: {e}")
+
+    return transactions
 
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)

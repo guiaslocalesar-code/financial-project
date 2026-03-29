@@ -68,6 +68,10 @@ class DashboardService:
         )
         pending_to_pay = pending_res.scalar() or 0.0
 
+        total_income = float(total_income)
+        total_expenses = float(total_expenses)
+        pending_to_pay = float(pending_to_pay)
+
         return {
             "total_income": total_income,
             "total_expenses": total_expenses,

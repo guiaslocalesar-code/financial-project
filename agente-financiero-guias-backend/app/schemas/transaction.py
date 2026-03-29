@@ -4,13 +4,13 @@ from datetime import datetime, date
 from app.utils.enums import TransactionType, ExpenseOrigin, PaymentMethod
 
 class TransactionBase(BaseModel):
-    company_id: UUID
+    company_id: str | UUID
     client_id: str | None = None
-    invoice_id: UUID | None = None
-    budget_id: UUID | None = None
+    invoice_id: str | UUID | None = None
+    budget_id: str | UUID | None = None
     service_id: str | None = None
-    expense_type_id: UUID | None = None
-    expense_category_id: UUID | None = None
+    expense_type_id: str | UUID | None = None
+    expense_category_id: str | UUID | None = None
     payment_method_id: str | None = None
     type: TransactionType
     is_budgeted: bool = False

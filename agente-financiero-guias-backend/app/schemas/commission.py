@@ -26,7 +26,7 @@ class CommissionRecipientCreate(CommissionRecipientBase):
     company_id: UUID
 
 class CommissionRecipientResponse(CommissionRecipientBase):
-    id: UUID
+    id: str
     company_id: UUID
     created_at: datetime
     rules: list[CommissionRuleResponse] = []
@@ -40,7 +40,7 @@ class CommissionBase(BaseModel):
     status: CommissionStatus = CommissionStatus.PENDING
 
 class CommissionResponse(CommissionBase):
-    id: UUID
+    id: str
     created_at: datetime
     updated_at: datetime
 

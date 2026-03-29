@@ -28,6 +28,16 @@ async def list_recipients(company_id: UUID, db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 # Rules
+@router.get("/rules", response_model=list[CommissionRuleResponse])
+async def list_rules(company_id: UUID, db: AsyncSession = Depends(get_db)):
+    query = (
+        select(CommissionRule)
+        .join(CommissionRecipient, CommissionRule.recipient_id == CommissionRecipient.id)
+        .where(CommissionRecipient.company_id == company_id)
+    )
+    result = await db.execute(query)
+    return result.scalars().all()
+
 @router.post("/rules", response_model=CommissionRuleResponse)
 async def create_rule(rule_in: CommissionRuleCreate, db: AsyncSession = Depends(get_db)):
     rule = CommissionRule(**rule_in.model_dump())
@@ -38,9 +48,18 @@ async def create_rule(rule_in: CommissionRuleCreate, db: AsyncSession = Depends(
 
 # Commissions
 @router.get("", response_model=list[CommissionResponse])
-async def list_commissions(recipient_id: Optional[UUID] = None, db: AsyncSession = Depends(get_db)):
+async def list_commissions(
+    company_id: Optional[UUID] = None,
+    recipient_id: Optional[UUID] = None, 
+    db: AsyncSession = Depends(get_db)
+):
     query = select(Commission)
     if recipient_id:
-        query = query.where(Commission.recipient_id == recipient_id)
+        query = query.where(Commission.recipient_id == str(recipient_id))
+    
+    if company_id:
+        query = query.join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id) \
+                     .where(CommissionRecipient.company_id == company_id)
+                     
     result = await db.execute(query)
     return result.scalars().all()
