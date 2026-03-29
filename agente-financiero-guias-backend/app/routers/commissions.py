@@ -22,9 +22,15 @@ async def create_recipient(rec_in: CommissionRecipientCreate, db: AsyncSession =
     await db.refresh(recipient)
     return recipient
 
+from sqlalchemy.orm import selectinload
+
 @router.get("/recipients", response_model=list[CommissionRecipientResponse])
 async def list_recipients(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(CommissionRecipient).where(CommissionRecipient.company_id == company_id))
+    result = await db.execute(
+        select(CommissionRecipient)
+        .options(selectinload(CommissionRecipient.rules))
+        .where(CommissionRecipient.company_id == company_id)
+    )
     return result.scalars().all()
 
 # Rules

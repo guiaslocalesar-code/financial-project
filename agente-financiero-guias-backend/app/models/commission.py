@@ -40,9 +40,9 @@ class Commission(Base):
     __tablename__ = "commissions"
 
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
-    transaction_id: Mapped[str] = mapped_column(String(50), ForeignKey("transactions.id"), nullable=False)
+    transaction_id: Mapped[str] = mapped_column("income_transaction_id", String(50), ForeignKey("transactions.id"), nullable=False)
     recipient_id: Mapped[str] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    amount: Mapped[float] = mapped_column("commission_amount", Numeric(12, 2), nullable=False)
     status: Mapped[CommissionStatus] = mapped_column(SQLEnum(CommissionStatus, name="commissionstatus"), default=CommissionStatus.PENDING)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
