@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str
     ALLOWED_ORIGINS: str = "*"
 
+    # Optional Google Auth (to prevent startup crashes)
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+
     # Storage Settings
     STORAGE_BACKEND: str = "local" # local or supabase
     SUPABASE_URL: str = ""
