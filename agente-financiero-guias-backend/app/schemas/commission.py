@@ -23,11 +23,11 @@ class CommissionRecipientBase(BaseModel):
     email: str | None = Field(None, max_length=255)
 
 class CommissionRecipientCreate(CommissionRecipientBase):
-    company_id: UUID
+    company_id: str | UUID
 
 class CommissionRecipientResponse(CommissionRecipientBase):
     id: str | UUID
-    company_id: UUID
+    company_id: str | UUID
     created_at: datetime
     rules: list[CommissionRuleResponse] = []
 
