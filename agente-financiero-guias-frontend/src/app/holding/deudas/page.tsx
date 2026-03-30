@@ -148,8 +148,8 @@ export default function DeudasPage() {
                                 <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
                                     <span className="flex items-center gap-1"><CalendarDaysIcon className="w-3 h-3" /> {new Date(debt.created_at).toLocaleDateString()}</span>
                                     <span className={clsx("badge text-[10px]", 
-                                        debt.status === 'PENDING' ? "badge-warning" : "badge-success")}>
-                                        {debt.status === 'PENDING' ? 'Pendiente' : 'Pagado'}
+                                        (debt.status === 'PENDING' || debt.status === 'ACTIVE' || debt.status === 'PARTIAL') ? "badge-warning" : "badge-success")}>
+                                        {(debt.status === 'PENDING' || debt.status === 'ACTIVE') ? 'Activa' : debt.status === 'PARTIAL' ? 'Parcial' : 'Pagada'}
                                     </span>
                                 </div>
                             </div>

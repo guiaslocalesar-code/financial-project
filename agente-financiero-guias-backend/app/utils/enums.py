@@ -66,10 +66,14 @@ class DebtStatus(str, enum.Enum):
     PENDING = "PENDING"
     PAID = "PAID"
     CANCELLED = "CANCELLED"
+    ACTIVE = "ACTIVE"
+    PARTIAL = "PARTIAL"
 
 class InterestType(str, enum.Enum):
     FIXED = "FIXED"
     VARIABLE = "VARIABLE"
+    NONE = "NONE"
+    FIXED_RATE = "FIXED_RATE"
 
 class CommissionStatus(str, enum.Enum):
     PENDING = "PENDING"
