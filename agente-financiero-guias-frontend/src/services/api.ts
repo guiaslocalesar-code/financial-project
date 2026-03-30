@@ -165,7 +165,11 @@ export const api = {
         listRecipients: (companyId: string) => financeClient.get('/commissions/recipients', { params: { company_id: companyId } }),
         listRules: (companyId: string) => financeClient.get('/commissions/rules', { params: { company_id: companyId } }),
         createRecipient: (data: any) => financeClient.post('/commissions/recipients', data),
+        updateRecipient: (id: string, data: any) => financeClient.patch(`/commissions/recipients/${id}`, data),
+        deleteRecipient: (id: string) => financeClient.delete(`/commissions/recipients/${id}`),
         createRule: (data: any) => financeClient.post('/commissions/rules', data),
+        updateRule: (id: string, data: any) => financeClient.patch(`/commissions/rules/${id}`, data),
+        deleteRule: (id: string) => financeClient.delete(`/commissions/rules/${id}`),
     },
 
     // ── Finance: User Roles & Permissions ─────────────────────────────────

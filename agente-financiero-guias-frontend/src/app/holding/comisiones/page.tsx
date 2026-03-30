@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserGroupIcon, PlusIcon, DocumentTextIcon, BanknotesIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { UserGroupIcon, PlusIcon, DocumentTextIcon, BanknotesIcon, CheckCircleIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { clsx } from 'clsx'
 import { api } from '@/services/api'
 import { useHoldingContext } from '@/context/HoldingContext'
@@ -24,6 +24,8 @@ export default function ComisionesPage() {
     const [ruleClientId, setRuleClientId] = useState('')
     const [ruleServiceId, setRuleServiceId] = useState('')
     const [rulePercentage, setRulePercentage] = useState<number | ''>('')
+    const [editingRec, setEditingRec] = useState<any>(null)
+    const [editingRule, setEditingRule] = useState<any>(null)
 
     // Data Queries
     const { data: recipients, isLoading: loadingRecs } = useQuery({
@@ -93,6 +95,37 @@ export default function ComisionesPage() {
             queryClient.invalidateQueries({ queryKey: ['commissionRules'] })
             setShowRuleForm(false)
             setRulePercentage('')
+        }
+    })
+
+    const updateRecMutation = useMutation({
+        mutationFn: ({ id, data }: any) => api.commissions.updateRecipient(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['commissionRecipients'] })
+            setEditingRec(null)
+        }
+    })
+
+    const deleteRecMutation = useMutation({
+        mutationFn: (id: string) => api.commissions.deleteRecipient(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['commissionRecipients'] })
+            queryClient.invalidateQueries({ queryKey: ['commissions'] })
+        }
+    })
+
+    const updateRuleMutation = useMutation({
+        mutationFn: ({ id, data }: any) => api.commissions.updateRule(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['commissionRules'] })
+            setEditingRule(null)
+        }
+    })
+
+    const deleteRuleMutation = useMutation({
+        mutationFn: (id: string) => api.commissions.deleteRule(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['commissionRules'] })
         }
     })
 
@@ -176,20 +209,46 @@ export default function ComisionesPage() {
                                 <p className="mt-2 text-sm text-gray-400 font-medium">No hay colaboradores registrados.</p>
                             </div>
                         ) : recipients?.map((rec: any) => (
-                            <div key={rec.id} className="glass-card p-5 transition-all hover:ring-2 hover:ring-indigo-500/20 group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:scale-110 transition-transform">
-                                        {rec.name.charAt(0)}
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <h3 className="font-bold text-gray-900 line-clamp-1">{rec.name}</h3>
-                                        <p className="text-xs text-gray-500 line-clamp-1">{rec.email || 'Sin email'}</p>
-                                    </div>
+                            <div key={rec.id} className="glass-card p-5 transition-all hover:ring-2 hover:ring-indigo-500/20 group relative">
+                                <div className="absolute top-4 right-4 flex gap-1 opacity-10 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => { setEditingRec(rec); setRecName(rec.name); setRecEmail(rec.email || '') }} 
+                                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                        <PencilSquareIcon className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => { if(confirm('¿Eliminar colaborador y sus reglas?')) deleteRecMutation.mutate(rec.id) }} 
+                                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                        <TrashIcon className="w-4 h-4" />
+                                    </button>
                                 </div>
-                                <div className="mt-4 flex gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-400">
-                                    <div className="flex items-center gap-1"><DocumentTextIcon className="w-3 h-3" /> {rec.rules?.length || 0} Reglas</div>
-                                    <div className="flex items-center gap-1 text-emerald-600"><BanknotesIcon className="w-3 h-3" /> {formatCurrency(0)} Pagados</div>
-                                </div>
+
+                                {editingRec?.id === rec.id ? (
+                                    <form onSubmit={(e) => { e.preventDefault(); updateRecMutation.mutate({ id: rec.id, data: { name: recName, email: recEmail } }) }} className="space-y-3">
+                                        <input type="text" value={recName} onChange={(e) => setRecName(e.target.value)}
+                                            className="w-full px-2 py-1 text-sm border rounded outline-none focus:ring-1 focus:ring-indigo-500" />
+                                        <input type="email" value={recEmail} onChange={(e) => setRecEmail(e.target.value)}
+                                            className="w-full px-2 py-1 text-sm border rounded outline-none focus:ring-1 focus:ring-indigo-500" />
+                                        <div className="flex justify-end gap-2">
+                                            <button type="button" onClick={() => setEditingRec(null)} className="text-[10px] font-bold text-gray-400 uppercase">Cancelar</button>
+                                            <button type="submit" className="text-[10px] font-bold text-indigo-600 uppercase">Guardar</button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:scale-110 transition-transform">
+                                                {rec.name.charAt(0)}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <h3 className="font-bold text-gray-900 line-clamp-1">{rec.name}</h3>
+                                                <p className="text-xs text-gray-500 line-clamp-1">{rec.email || 'Sin email'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 flex gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-400">
+                                            <div className="flex items-center gap-1"><DocumentTextIcon className="w-3 h-3" /> {rec.rules?.length || 0} Reglas</div>
+                                            <div className="flex items-center gap-1 text-emerald-600"><BanknotesIcon className="w-3 h-3" /> {formatCurrency(0)} Pagados</div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -247,6 +306,7 @@ export default function ComisionesPage() {
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Aplica a</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Porcentaje</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Creado</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px] text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -258,23 +318,64 @@ export default function ComisionesPage() {
                                     </tr>
                                 ) : rules?.map((rule: any) => (
                                     <tr key={rule.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-gray-900">{rule.recipient_name || rule.recipient_id}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-xs font-semibold text-gray-500">
-                                                {rule.client_name ? (
-                                                    <span className="flex items-center gap-1">Cliente: <span className="text-emerald-600">{rule.client_name}</span></span>
-                                                ) : null}
-                                                {rule.client_name && rule.service_name ? <span className="mx-1">+</span> : null}
-                                                {rule.service_name ? (
-                                                    <span className="flex items-center gap-1">Servicio: <span className="text-indigo-600">{rule.service_name}</span></span>
-                                                ) : null}
-                                                {!rule.client_name && !rule.service_name ? (
-                                                    <span className="text-gray-400 italic">Todas las ventas</span>
-                                                ) : null}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-black text-indigo-600 text-sm">{rule.percentage}%</td>
-                                        <td className="px-6 py-4 text-xs text-gray-400 font-medium">{new Date(rule.created_at).toLocaleDateString()}</td>
+                                        {editingRule?.id === rule.id ? (
+                                            <>
+                                                <td className="px-6 py-4 font-bold text-gray-900">{rule.recipient_name || rule.recipient_id}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        <select value={ruleClientId} onChange={(e) => setRuleClientId(e.target.value)}
+                                                            className="text-xs border rounded p-1 outline-none">
+                                                            <option value="">Todos los clientes</option>
+                                                            {clients?.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                        </select>
+                                                        <select value={ruleServiceId} onChange={(e) => setRuleServiceId(e.target.value)}
+                                                            className="text-xs border rounded p-1 outline-none">
+                                                            <option value="">Todos los servicios</option>
+                                                            {services?.map((s: any) => <option key={s.id} value={s.id}>{s.name || s.nombre}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <input type="number" value={rulePercentage} onChange={(e) => setRulePercentage(Number(e.target.value))}
+                                                        className="w-16 text-xs border rounded p-1 outline-none" />
+                                                </td>
+                                                <td colSpan={2} className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => setEditingRule(null)} className="text-[10px] font-bold text-gray-400 uppercase">Cancel</button>
+                                                        <button onClick={() => updateRuleMutation.mutate({ id: rule.id, data: { client_id: ruleClientId || null, service_id: ruleServiceId || null, percentage: Number(rulePercentage) } })} 
+                                                            className="text-[10px] font-bold text-indigo-600 uppercase">Save</button>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="px-6 py-4 font-bold text-gray-900">{rule.recipient_name || rule.recipient_id}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-xs font-semibold text-gray-500">
+                                                        {rule.client_name ? (
+                                                            <span className="flex items-center gap-1">Cliente: <span className="text-emerald-600">{rule.client_name}</span></span>
+                                                        ) : null}
+                                                        {rule.client_name && rule.service_name ? <span className="mx-1">+</span> : null}
+                                                        {rule.service_name ? (
+                                                            <span className="flex items-center gap-1">Servicio: <span className="text-indigo-600">{rule.service_name}</span></span>
+                                                        ) : null}
+                                                        {!rule.client_name && !rule.service_name ? (
+                                                            <span className="text-gray-400 italic">Todas las ventas</span>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 font-black text-indigo-600 text-sm">{rule.percentage}%</td>
+                                                <td className="px-6 py-4 text-xs text-gray-400 font-medium">{new Date(rule.created_at).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end gap-1 opacity-20 hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => { setEditingRule(rule); setRulePercentage(rule.percentage); setRuleClientId(rule.client_id || ''); setRuleServiceId(rule.service_id || '') }}
+                                                            className="p-1 hover:text-indigo-600 transition-colors"><PencilSquareIcon className="w-4 h-4" /></button>
+                                                        <button onClick={() => { if(confirm('¿Eliminar regla?')) deleteRuleMutation.mutate(rule.id) }} 
+                                                            className="p-1 hover:text-red-600 transition-colors"><TrashIcon className="w-4 h-4" /></button>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -291,6 +392,7 @@ export default function ComisionesPage() {
                                 <tr>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Fecha</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Colaborador</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Detalle Venta</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Monto</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 text-[10px]">Estado</th>
                                 </tr>
@@ -304,8 +406,17 @@ export default function ComisionesPage() {
                                     </tr>
                                 ) : commissions?.map((comm: any) => (
                                     <tr key={comm.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(comm.created_at).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-bold text-gray-900">{comm.recipient_id}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">{new Date(comm.transaction_date || comm.created_at).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-gray-900">{comm.recipient_name || comm.recipient_id}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-xs text-gray-500 font-medium">
+                                                {comm.client_name ? <span className="block text-emerald-600 font-bold">{comm.client_name}</span> : null}
+                                                {comm.service_name ? <span className="block text-indigo-600">{comm.service_name}</span> : null}
+                                                {!comm.client_name && !comm.service_name && <span className="text-gray-300 italic">Sin detalle</span>}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4 font-black text-gray-900">{formatCurrency(comm.amount)}</td>
                                         <td className="px-6 py-4">
                                             <span className={clsx("badge text-[10px]", 

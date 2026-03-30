@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 
 class CommissionRuleBase(BaseModel):
     client_id: str | None = None
@@ -9,6 +9,11 @@ class CommissionRuleBase(BaseModel):
 
 class CommissionRuleCreate(CommissionRuleBase):
     recipient_id: str | UUID
+
+class CommissionRuleUpdate(BaseModel):
+    client_id: str | None = None
+    service_id: str | None = None
+    percentage: float | None = None
 
 class CommissionRuleResponse(CommissionRuleBase):
     id: str | UUID
@@ -31,6 +36,13 @@ class CommissionRecipientBase(BaseModel):
 class CommissionRecipientCreate(CommissionRecipientBase):
     company_id: str | UUID
 
+class CommissionRecipientUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    cuit: str | None = None
+    is_active: bool | None = None
+    type: str | None = None
+
 class CommissionRecipientResponse(CommissionRecipientBase):
     id: str | UUID
     company_id: str | UUID
@@ -50,6 +62,11 @@ class CommissionResponse(CommissionBase):
     id: str | UUID
     created_at: datetime
     updated_at: datetime | None = None
+    recipient_name: str | None = None
+    client_name: str | None = None
+    service_name: str | None = None
+    transaction_description: str | None = None
+    transaction_date: date | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
