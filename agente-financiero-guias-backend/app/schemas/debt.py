@@ -1,13 +1,12 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime, date
-from app.utils.enums import DebtStatus, InterestType
 
 class DebtInstallmentBase(BaseModel):
     installment_number: int
     amount: float
     due_date: date
-    status: DebtStatus = DebtStatus.PENDING
+    status: str = "PENDING"
 
 class DebtInstallmentCreate(DebtInstallmentBase):
     debt_id: str | UUID
@@ -17,14 +16,14 @@ class DebtInstallmentResponse(DebtInstallmentBase):
     debt_id: str | UUID
     transaction_id: str | UUID | None = None
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class DebtBase(BaseModel):
     description: str
     original_amount: float
-    interest_type: InterestType | None = None
+    interest_type: str | None = None
     interest_rate: float | None = None
     total_amount: float
     installments: int = 1
@@ -34,14 +33,15 @@ class DebtCreate(DebtBase):
 
 class DebtUpdate(BaseModel):
     description: str | None = None
-    status: DebtStatus | None = None
+    status: str | None = None
 
 class DebtResponse(DebtBase):
     id: str | UUID
     company_id: str | UUID
-    status: DebtStatus
+    status: str
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
     debt_installments: list[DebtInstallmentResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+

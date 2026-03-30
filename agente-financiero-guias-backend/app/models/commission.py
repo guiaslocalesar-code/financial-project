@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Numeric, DateTime, ForeignKey, Enum as SQLEnum, func
+from sqlalchemy import String, Numeric, DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
-from app.utils.enums import CommissionStatus
 
 class CommissionRecipient(Base):
     __tablename__ = "commission_recipients"
@@ -43,10 +42,11 @@ class Commission(Base):
     transaction_id: Mapped[str] = mapped_column("income_transaction_id", String(50), ForeignKey("transactions.id"), nullable=False)
     recipient_id: Mapped[str] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
     amount: Mapped[float] = mapped_column("commission_amount", Numeric(12, 2), nullable=False)
-    status: Mapped[CommissionStatus] = mapped_column(SQLEnum(CommissionStatus, name="commissionstatus"), default=CommissionStatus.PENDING)
+    status: Mapped[str] = mapped_column(String(50), default="PENDING")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
     # Relationships
     transaction = relationship("Transaction")
     recipient = relationship("CommissionRecipient", back_populates="commissions")
+

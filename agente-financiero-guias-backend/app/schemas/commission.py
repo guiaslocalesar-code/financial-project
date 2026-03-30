@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime
-from app.utils.enums import CommissionStatus
 
 class CommissionRuleBase(BaseModel):
     client_id: str | None = None
@@ -37,11 +36,12 @@ class CommissionBase(BaseModel):
     transaction_id: str | UUID
     recipient_id: str | UUID
     amount: float
-    status: CommissionStatus = CommissionStatus.PENDING
+    status: str = "PENDING"
 
 class CommissionResponse(CommissionBase):
     id: str | UUID
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
