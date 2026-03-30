@@ -7,6 +7,8 @@ class DebtInstallmentBase(BaseModel):
     amount: float
     due_date: date
     status: str = "PENDING"
+    capital_amount: float | None = None
+    interest_amount: float | None = None
 
 class DebtInstallmentCreate(DebtInstallmentBase):
     debt_id: str | UUID
@@ -27,6 +29,8 @@ class DebtBase(BaseModel):
     interest_rate: float | None = None
     total_amount: float
     installments: int = 1
+    installment_amount: float | None = None
+    first_due_date: date | None = None
 
 class DebtCreate(DebtBase):
     company_id: str | UUID

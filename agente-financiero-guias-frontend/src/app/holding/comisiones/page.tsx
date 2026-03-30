@@ -258,15 +258,23 @@ export default function ComisionesPage() {
                                     </tr>
                                 ) : rules?.map((rule: any) => (
                                     <tr key={rule.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-gray-900">{rule.recipient_id}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            {rule.client_id ? `Cliente: ${rule.client_id}` : ''}
-                                            {rule.client_id && rule.service_id ? ' + ' : ''}
-                                            {rule.service_id ? `Servicio: ${rule.service_id}` : ''}
-                                            {!rule.client_id && !rule.service_id ? 'Todas las ventas' : ''}
+                                        <td className="px-6 py-4 font-bold text-gray-900">{rule.recipient_name || rule.recipient_id}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-xs font-semibold text-gray-500">
+                                                {rule.client_name ? (
+                                                    <span className="flex items-center gap-1">Cliente: <span className="text-emerald-600">{rule.client_name}</span></span>
+                                                ) : null}
+                                                {rule.client_name && rule.service_name ? <span className="mx-1">+</span> : null}
+                                                {rule.service_name ? (
+                                                    <span className="flex items-center gap-1">Servicio: <span className="text-indigo-600">{rule.service_name}</span></span>
+                                                ) : null}
+                                                {!rule.client_name && !rule.service_name ? (
+                                                    <span className="text-gray-400 italic">Todas las ventas</span>
+                                                ) : null}
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 font-black text-indigo-600">{rule.percentage}%</td>
-                                        <td className="px-6 py-4 text-xs text-gray-400">{new Date(rule.created_at).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 font-black text-indigo-600 text-sm">{rule.percentage}%</td>
+                                        <td className="px-6 py-4 text-xs text-gray-400 font-medium">{new Date(rule.created_at).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -22,7 +22,7 @@ async def create_recipient(rec_in: CommissionRecipientCreate, db: AsyncSession =
     await db.refresh(recipient)
     return recipient
 
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 @router.get("/recipients", response_model=list[CommissionRecipientResponse])
 async def list_recipients(company_id: UUID, db: AsyncSession = Depends(get_db)):
@@ -38,11 +38,27 @@ async def list_recipients(company_id: UUID, db: AsyncSession = Depends(get_db)):
 async def list_rules(company_id: UUID, db: AsyncSession = Depends(get_db)):
     query = (
         select(CommissionRule)
+        .options(
+            joinedload(CommissionRule.recipient),
+            joinedload(CommissionRule.client),
+            joinedload(CommissionRule.service)
+        )
         .join(CommissionRecipient, CommissionRule.recipient_id == CommissionRecipient.id)
         .where(CommissionRecipient.company_id == company_id)
     )
     result = await db.execute(query)
-    return result.scalars().all()
+    rules = result.scalars().all()
+    
+    # Enrichment for names
+    for rule in rules:
+        if rule.recipient:
+            setattr(rule, "recipient_name", rule.recipient.name)
+        if rule.client:
+            setattr(rule, "client_name", rule.client.name)
+        if rule.service:
+            setattr(rule, "service_name", rule.service.name)
+            
+    return rules
 
 @router.post("/rules", response_model=CommissionRuleResponse)
 async def create_rule(rule_in: CommissionRuleCreate, db: AsyncSession = Depends(get_db)):

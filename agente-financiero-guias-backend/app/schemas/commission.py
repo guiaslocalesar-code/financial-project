@@ -14,12 +14,19 @@ class CommissionRuleResponse(CommissionRuleBase):
     id: str | UUID
     recipient_id: str | UUID
     created_at: datetime
+    updated_at: datetime | None = None
+    recipient_name: str | None = None
+    client_name: str | None = None
+    service_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class CommissionRecipientBase(BaseModel):
     name: str = Field(..., max_length=255)
     email: str | None = Field(None, max_length=255)
+    cuit: str | None = None
+    is_active: bool = True
+    type: str | None = None
 
 class CommissionRecipientCreate(CommissionRecipientBase):
     company_id: str | UUID
@@ -28,6 +35,7 @@ class CommissionRecipientResponse(CommissionRecipientBase):
     id: str | UUID
     company_id: str | UUID
     created_at: datetime
+    updated_at: datetime | None = None
     rules: list[CommissionRuleResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -44,4 +52,5 @@ class CommissionResponse(CommissionBase):
     updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
 

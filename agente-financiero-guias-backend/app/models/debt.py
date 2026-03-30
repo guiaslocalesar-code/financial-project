@@ -7,7 +7,7 @@ from app.database import Base
 class Debt(Base):
     __tablename__ = "debts"
 
-    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=False)
     original_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
@@ -26,8 +26,8 @@ class Debt(Base):
 class DebtInstallment(Base):
     __tablename__ = "debt_installments"
 
-    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
-    debt_id: Mapped[str] = mapped_column(ForeignKey("debts.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    debt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("debts.id"), nullable=False)
     installment_number: Mapped[int] = mapped_column(Integer, nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
