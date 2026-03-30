@@ -10,13 +10,48 @@ from app.schemas.debt import DebtCreate, DebtUpdate, DebtResponse, DebtInstallme
 
 router = APIRouter(prefix="/debts", tags=["Debts"])
 
+from datetime import timedelta, date
+from calendar import monthrange
+
 @router.post("", response_model=DebtResponse)
 async def create_debt(debt_in: DebtCreate, db: AsyncSession = Depends(get_db)):
-    debt = Debt(**debt_in.model_dump())
+    data = debt_in.model_dump()
+    
+    # Remove fields that exist in schema but not in the SQL model
+    first_due_date = data.pop("first_due_date", None)
+    installment_amount = data.pop("installment_amount", None)
+    
+    debt = Debt(**data)
     db.add(debt)
+    await db.flush()  # Generate debt.id
+    
+    # Generate installments
+    if not first_due_date:
+        first_due_date = date.today()
+        
+    if not installment_amount:
+        installment_amount = round(debt.total_amount / (debt.installments or 1), 2)
+        
+    current_date = first_due_date
+    for i in range(1, debt.installments + 1):
+        inst = DebtInstallment(
+            debt_id=debt.id,
+            installment_number=i,
+            amount=installment_amount,
+            due_date=current_date,
+            status="PENDING"
+        )
+        db.add(inst)
+        
+        # Advance 1 month
+        days_in_month = monthrange(current_date.year, current_date.month)[1]
+        current_date += timedelta(days=days_in_month)
+        
     await db.commit()
-    await db.refresh(debt)
-    return debt
+    
+    # Reload the debt with installments to satisfy DebtResponse
+    result = await db.execute(select(Debt).options(joinedload(Debt.debt_installments)).where(Debt.id == debt.id))
+    return result.scalar_one()
 
 @router.get("", response_model=list[DebtResponse])
 async def list_debts(
