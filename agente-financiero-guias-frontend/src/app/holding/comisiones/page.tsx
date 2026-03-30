@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserGroupIcon, PlusIcon, DocumentTextIcon, BanknotesIcon, CheckCircleIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import { UserGroupIcon, PlusIcon, DocumentTextIcon, BanknotesIcon, CheckCircleIcon, TrashIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { clsx } from 'clsx'
 import { api } from '@/services/api'
 import { useHoldingContext } from '@/context/HoldingContext'
@@ -129,6 +129,13 @@ export default function ComisionesPage() {
         }
     })
 
+    const updateCommStatusMutation = useMutation({
+        mutationFn: ({ id, status }: any) => api.commissions.updateStatus(id, status),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['commissions'] })
+        }
+    })
+
     if (!selectedCompany) {
         return (
             <div className="flex flex-col items-center justify-center py-20 animate-fade-in-up">
@@ -215,40 +222,25 @@ export default function ComisionesPage() {
                                         className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                                         <PencilSquareIcon className="w-4 h-4" />
                                     </button>
-                                    <button onClick={() => { if(confirm('¿Eliminar colaborador y sus reglas?')) deleteRecMutation.mutate(rec.id) }} 
+                                    <button onClick={() => { if(confirm('¿Eliminar colaborador?')) deleteRecMutation.mutate(rec.id) }} 
                                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                         <TrashIcon className="w-4 h-4" />
                                     </button>
                                 </div>
 
-                                {editingRec?.id === rec.id ? (
-                                    <form onSubmit={(e) => { e.preventDefault(); updateRecMutation.mutate({ id: rec.id, data: { name: recName, email: recEmail } }) }} className="space-y-3">
-                                        <input type="text" value={recName} onChange={(e) => setRecName(e.target.value)}
-                                            className="w-full px-2 py-1 text-sm border rounded outline-none focus:ring-1 focus:ring-indigo-500" />
-                                        <input type="email" value={recEmail} onChange={(e) => setRecEmail(e.target.value)}
-                                            className="w-full px-2 py-1 text-sm border rounded outline-none focus:ring-1 focus:ring-indigo-500" />
-                                        <div className="flex justify-end gap-2">
-                                            <button type="button" onClick={() => setEditingRec(null)} className="text-[10px] font-bold text-gray-400 uppercase">Cancelar</button>
-                                            <button type="submit" className="text-[10px] font-bold text-indigo-600 uppercase">Guardar</button>
-                                        </div>
-                                    </form>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:scale-110 transition-transform">
-                                                {rec.name.charAt(0)}
-                                            </div>
-                                            <div className="overflow-hidden">
-                                                <h3 className="font-bold text-gray-900 line-clamp-1">{rec.name}</h3>
-                                                <p className="text-xs text-gray-500 line-clamp-1">{rec.email || 'Sin email'}</p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 flex gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-400">
-                                            <div className="flex items-center gap-1"><DocumentTextIcon className="w-3 h-3" /> {rec.rules?.length || 0} Reglas</div>
-                                            <div className="flex items-center gap-1 text-emerald-600"><BanknotesIcon className="w-3 h-3" /> {formatCurrency(0)} Pagados</div>
-                                        </div>
-                                    </>
-                                )}
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:scale-110 transition-transform">
+                                        {rec.name.charAt(0)}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <h3 className="font-bold text-gray-900 line-clamp-1">{rec.name}</h3>
+                                        <p className="text-xs text-gray-500 line-clamp-1">{rec.email || 'Sin email'}</p>
+                                    </div>
+                                </div>
+                                <div className="mt-4 flex gap-4 text-[10px] uppercase font-bold tracking-wider text-gray-400">
+                                    <div className="flex items-center gap-1"><DocumentTextIcon className="w-3 h-3" /> {rec.rules?.length || 0} Reglas</div>
+                                    <div className="flex items-center gap-1 text-emerald-600"><BanknotesIcon className="w-3 h-3" /> {formatCurrency(0)} Pagados</div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -411,23 +403,75 @@ export default function ComisionesPage() {
                                             <div className="font-bold text-gray-900">{comm.recipient_name || comm.recipient_id}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-xs text-gray-500 font-medium">
-                                                {comm.client_name ? <span className="block text-emerald-600 font-bold">{comm.client_name}</span> : null}
-                                                {comm.service_name ? <span className="block text-indigo-600">{comm.service_name}</span> : null}
-                                                {!comm.client_name && !comm.service_name && <span className="text-gray-300 italic">Sin detalle</span>}
+                                            <div className="text-xs text-gray-500 font-medium flex items-center gap-3">
+                                                {comm.client_logo ? (
+                                                    <img src={comm.client_logo} alt={comm.client_name} className="w-8 h-8 rounded-lg object-cover shadow-sm bg-gray-50" 
+                                                        onError={(e) => { (e.target as any).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comm.client_name || 'C')}&background=random` }} />
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-[10px]">
+                                                        {comm.client_name?.charAt(0) || 'C'}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    {comm.service_name ? <span className="block text-indigo-600 font-bold">{comm.service_name}</span> : null}
+                                                    {comm.transaction_description ? <span className="block text-[10px] text-gray-400 max-w-[150px] truncate">{comm.transaction_description}</span> : null}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 font-black text-gray-900">{formatCurrency(comm.amount)}</td>
                                         <td className="px-6 py-4">
-                                            <span className={clsx("badge text-[10px]", 
-                                                comm.status === 'PAID' ? "badge-success" : "badge-warning")}>
+                                            <button 
+                                                onClick={() => {
+                                                    if(comm.status !== 'PAID' && confirm('¿Marcar como PAGADO?')) {
+                                                        updateCommStatusMutation.mutate({ id: comm.id, status: 'PAID' })
+                                                    }
+                                                }}
+                                                disabled={comm.status === 'PAID'}
+                                                className={clsx("badge text-[10px] transition-all", 
+                                                comm.status === 'PAID' ? "badge-success cursor-default" : "badge-warning hover:scale-105 active:scale-95 cursor-pointer")}>
                                                 {comm.status === 'PAID' ? 'PAGADO' : 'PENDIENTE'}
-                                            </span>
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Edición de Colaborador */}
+            {editingRec && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-900">Editar Colaborador</h3>
+                            <button onClick={() => setEditingRec(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <form onSubmit={(e) => { e.preventDefault(); updateRecMutation.mutate({ id: editingRec.id, data: { name: recName, email: recEmail } }) }} className="p-6 space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre Completo</label>
+                                <input type="text" value={recName} onChange={(e) => setRecName(e.target.value)} required
+                                    className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email de contacto</label>
+                                <input type="email" value={recEmail} onChange={(e) => setRecEmail(e.target.value)}
+                                    className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <button type="button" onClick={() => setEditingRec(null)} 
+                                    className="flex-1 px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors">
+                                    Cancelar
+                                </button>
+                                <button type="submit" disabled={updateRecMutation.isPending}
+                                    className="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50">
+                                    {updateRecMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

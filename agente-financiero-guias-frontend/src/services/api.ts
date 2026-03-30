@@ -170,6 +170,7 @@ export const api = {
         createRule: (data: any) => financeClient.post('/commissions/rules', data),
         updateRule: (id: string, data: any) => financeClient.patch(`/commissions/rules/${id}`, data),
         deleteRule: (id: string) => financeClient.delete(`/commissions/rules/${id}`),
+        updateStatus: (id: string, status: string) => financeClient.patch(`/commissions/${id}/status`, { status }),
     },
 
     // ── Finance: User Roles & Permissions ─────────────────────────────────

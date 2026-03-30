@@ -8,7 +8,7 @@ from app.models.commission import CommissionRecipient, CommissionRule, Commissio
 from app.schemas.commission import (
     CommissionRecipientCreate, CommissionRecipientResponse, CommissionRecipientUpdate,
     CommissionRuleCreate, CommissionRuleResponse, CommissionRuleUpdate,
-    CommissionResponse
+    CommissionResponse, CommissionStatusUpdate
 )
 from app.models.transaction import Transaction
 from app.models.client import Client
@@ -145,7 +145,23 @@ async def list_commissions(
             setattr(comm, "transaction_date", comm.transaction.transaction_date)
             if comm.transaction.client:
                 setattr(comm, "client_name", comm.transaction.client.name)
+                setattr(comm, "client_logo", comm.transaction.client.imagen)
             if comm.transaction.service:
                 setattr(comm, "service_name", comm.transaction.service.name or comm.transaction.service.nombre)
                 
     return commissions
+
+@router.patch("/{commission_id}/status", response_model=CommissionResponse)
+async def update_commission_status(
+    commission_id: UUID, 
+    status_in: CommissionStatusUpdate, 
+    db: AsyncSession = Depends(get_db)
+):
+    commission = await db.get(Commission, commission_id)
+    if not commission:
+        raise HTTPException(status_code=404, detail="Commission not found")
+    
+    commission.status = status_in.status
+    await db.commit()
+    await db.refresh(commission)
+    return commission

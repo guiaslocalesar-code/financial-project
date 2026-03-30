@@ -58,12 +58,16 @@ class CommissionBase(BaseModel):
     amount: float
     status: str = "PENDING"
 
+class CommissionStatusUpdate(BaseModel):
+    status: str
+
 class CommissionResponse(CommissionBase):
     id: str | UUID
     created_at: datetime
     updated_at: datetime | None = None
     recipient_name: str | None = None
     client_name: str | None = None
+    client_logo: str | None = None
     service_name: str | None = None
     transaction_description: str | None = None
     transaction_date: date | None = None
