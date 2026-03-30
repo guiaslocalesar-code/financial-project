@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload
 from uuid import UUID
 from typing import List
@@ -33,40 +33,65 @@ async def invite_user_to_company(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Invita a un usuario (por email) a un negocio. Si el usuario no existe en la BD global de Supabase, falla.
-    Si ya posee acceso al negocio, lanza error 400.
+    Invita a un usuario (por email) a un negocio.
+    Si el usuario existe en Supabase Auth pero nunca inició sesión en el portal,
+    se crea automáticamente su registro en public.users y se lo vincula a la empresa.
     """
     try:
-        # 1. Check if user exists by email
+        # 1. Check in public.users first
         user_res = await db.execute(select(User).where(User.email == invite_data.email))
         user = user_res.scalar_one_or_none()
-        
+
         if not user:
-            raise HTTPException(status_code=404, detail="El usuario no se ha registrado en el sistema web. Primero debe iniciar sesión.")
-        
-        # 2. Check if already linked to this company
+            # 2. Look up in auth.users (Supabase's internal table)
+            auth_res = await db.execute(
+                text("SELECT id, email, raw_user_meta_data FROM auth.users WHERE email = :email LIMIT 1"),
+                {"email": invite_data.email}
+            )
+            auth_row = auth_res.fetchone()
+
+            if not auth_row:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"El email '{invite_data.email}' no está registrado en Supabase. El usuario debe crear una cuenta primero."
+                )
+
+            # 3. Auto-provision into public.users
+            auth_id = auth_row[0]
+            auth_email = auth_row[1]
+            meta = auth_row[2] or {}
+            display_name = meta.get("full_name") or meta.get("name") or auth_email.split("@")[0]
+
+            user = User(
+                id=auth_id,
+                email=auth_email,
+                name=display_name,
+                is_active=True
+            )
+            db.add(user)
+            await db.flush()  # persist without committing yet
+
+        # 4. Check if already linked to this company
         link_res = await db.execute(
             select(UserCompany)
             .where(UserCompany.user_id == user.id, UserCompany.company_id == company_id)
         )
         existing_link = link_res.scalar_one_or_none()
-        
+
         if existing_link:
             if existing_link.is_active:
                 raise HTTPException(status_code=400, detail="El usuario ya pertenece a esta empresa")
             else:
-                # Re-activate user
+                # Re-activate
                 existing_link.is_active = True
                 existing_link.role = invite_data.role
                 existing_link.permissions = invite_data.permissions
                 existing_link.quotaparte = invite_data.quotaparte
                 await db.commit()
-                await db.refresh(existing_link)
-                # Re-fetch with joined user
                 rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == existing_link.id))
                 return rel_res.scalar_one()
 
-        # 3. Create new link
+        # 5. Create new company link
         new_uc = UserCompany(
             user_id=user.id,
             company_id=company_id,
@@ -77,8 +102,7 @@ async def invite_user_to_company(
         db.add(new_uc)
         await db.commit()
         await db.refresh(new_uc)
-        
-        # Re-fetch with user joined
+
         rel_res = await db.execute(select(UserCompany).options(joinedload(UserCompany.user)).where(UserCompany.id == new_uc.id))
         return rel_res.scalar_one()
 
@@ -87,6 +111,7 @@ async def invite_user_to_company(
     except Exception as e:
         error_msg = f"{str(e)}\n{traceback.format_exc()}"
         raise HTTPException(status_code=400, detail=error_msg)
+
 
 
 @router.put("/user-companies/{user_company_id}", response_model=UserCompanyResponse)
