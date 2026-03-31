@@ -73,7 +73,12 @@ export interface Invoice {
     // Computed frontend fields
     client_name?: string;
     overdue_days?: number;
-    client?: { name: string };
+    client?: { 
+        name: string;
+        cuit_cuil_dni: string;
+        fiscal_condition: string;
+        address?: string;
+    };
     items?: {
         id: string;
         service_id?: string;

@@ -101,7 +101,16 @@ export interface InvoiceCreatePayload {
 // ── Datos del formulario (lo que maneja React Hook Form) ────────────────────
 
 export interface InvoiceFormValues {
-    client_id: string
+    // Cliente (ID opcional si es carga manual rápida)
+    client_id?: string
+    
+    // Overrides de cliente para edición directa
+    client_name: string
+    client_cuit: string
+    client_fiscal_condition: string
+    client_address?: string
+
+    // Cabecera
     invoice_type: 'A' | 'B' | 'C'
     point_of_sale: number
     issue_date: string

@@ -73,6 +73,13 @@ export const api = {
         get: (id: string) => financeClient.get(`/companies/${id}`),
         create: (data: any) => financeClient.post('/companies', data),
         update: (id: string, data: any) => financeClient.put(`/companies/${id}`, data),
+        updateLogo: (id: string, file: File) => {
+            const formData = new FormData()
+            formData.append('file', file)
+            return financeClient.post(`/companies/${id}/logo`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+        },
     },
 
     // ── Finance: Clients ────────────────────────────────────────────────────

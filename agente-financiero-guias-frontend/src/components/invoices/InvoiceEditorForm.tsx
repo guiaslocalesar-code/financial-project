@@ -7,6 +7,7 @@
  * Sincronizado en tiempo real con el preview a través del hook useInvoiceEditor.
  */
 
+import { useRef } from 'react'
 import { PlusIcon, TrashIcon, UserIcon, CalendarIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline'
 import type { 
     UseFormRegister, 
@@ -30,6 +31,8 @@ interface InvoiceEditorFormProps {
     clients: Client[]
     services: Service[]
     setValue: UseFormSetValue<InvoiceFormValues>
+    onUploadLogo?: (file: File) => void
+    company?: any
     isReadOnly?: boolean
 }
 
@@ -43,12 +46,57 @@ export function InvoiceEditorForm({
     clients,
     services,
     setValue,
+    onUploadLogo,
+    company,
     isReadOnly = false,
 }: InvoiceEditorFormProps) {
 
+    const logoInputRef = useRef<HTMLInputElement>(null)
+
     return (
         <div className="space-y-8 pb-20">
-            {/* ── Sección 1: Cliente y Datos de Cabecera ── */}
+            {/* ── Sección 0: Empresa Emisora ── */}
+            <div className="p-5 rounded-3xl bg-blue-50/20 border border-blue-100 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-white border border-blue-100 flex items-center justify-center overflow-hidden shadow-sm">
+                        {company?.imagen ? (
+                            <img src={company.imagen} alt="Logo" className="w-full h-full object-contain" />
+                        ) : (
+                            <ArchiveBoxIcon className="w-6 h-6 text-blue-200" />
+                        )}
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Identidad Corporativa</div>
+                        <div className="text-sm font-bold text-slate-700">{company?.name || 'Nombre Empresa'}</div>
+                        <p className="text-[10px] text-slate-500">Logo y datos para el comprobante A4.</p>
+                    </div>
+                </div>
+                
+                {!isReadOnly && onUploadLogo && (
+                    <>
+                        <input 
+                            type="file" 
+                            className="hidden" 
+                            ref={logoInputRef}
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) onUploadLogo(file)
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-xl transition-all"
+                            title="Cambiar Logo"
+                        >
+                            <PlusIcon className="w-5 h-5" />
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {/* ── Sección 1: Cliente e Información Fiscal ── */}
             <div className="space-y-5">
                 <div className="flex items-center gap-2 mb-2 text-blue-600 font-bold text-xs uppercase tracking-widest">
                     <UserIcon className="w-4 h-4" />
@@ -56,22 +104,71 @@ export function InvoiceEditorForm({
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
-                        <select
-                            {...register('client_id')}
-                            disabled={isReadOnly}
-                            className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
-                        >
-                            <option value="">Seleccionar cliente...</option>
-                            {clients.map(c => (
-                                <option key={c.id} value={c.id}>{c.name} ({c.cuit_cuil_dni})</option>
-                            ))}
-                        </select>
-                        {errors.client_id && <p className="mt-1 text-xs text-rose-500 font-medium">{errors.client_id.message}</p>}
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Buscar Cliente (Catálogo)</label>
+                            <select
+                                {...register('client_id')}
+                                disabled={isReadOnly}
+                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                            >
+                                <option value="">Carga manual o seleccionar catálogo...</option>
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name} ({c.cuit_cuil_dni})</option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Razón Social</label>
+                            <input
+                                type="text"
+                                {...register('client_name')}
+                                disabled={isReadOnly}
+                                placeholder="Nombre completo o empresa"
+                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-50"
+                            />
+                            {errors.client_name && <p className="mt-1 text-xs text-rose-500 font-medium">{errors.client_name.message}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">CUIT / CUIL / DNI</label>
+                            <input
+                                type="text"
+                                {...register('client_cuit')}
+                                disabled={isReadOnly}
+                                placeholder="00-00000000-0"
+                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-50"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Condición IVA</label>
+                            <select
+                                {...register('client_fiscal_condition')}
+                                disabled={isReadOnly}
+                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-50"
+                            >
+                                <option value="RI">IVA Responsable Inscripto</option>
+                                <option value="MONOTRIBUTO">Monotributo</option>
+                                <option value="EXENTO">IVA Exento</option>
+                                <option value="CONSUMIDOR_FINAL">Consumidor Final</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Domicilio</label>
+                            <input
+                                type="text"
+                                {...register('client_address')}
+                                disabled={isReadOnly}
+                                placeholder="Calle y número..."
+                                className="block w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:bg-gray-50"
+                            />
+                        </div>
+
+                        <div className="sm:col-span-2 pt-2 border-t border-gray-100"></div>
+
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Tipo Factura</label>
                             <select

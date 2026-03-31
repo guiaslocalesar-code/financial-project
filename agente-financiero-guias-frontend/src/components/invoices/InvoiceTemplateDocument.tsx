@@ -77,8 +77,8 @@ export function InvoiceTemplateDocument({ data }: InvoiceTemplateDocumentProps) 
             {/* Estilos aislados — prefijo inv-doc para no contaminar el dashboard */}
             <style jsx>{`
                 .inv-doc-page {
-                    width: 210mm;
-                    min-height: 297mm;
+                    width: 909px;
+                    min-height: 1286px;
                     background: #fff;
                     color: #000;
                     font-family: Helvetica, Arial, sans-serif;
@@ -89,6 +89,8 @@ export function InvoiceTemplateDocument({ data }: InvoiceTemplateDocumentProps) 
                     padding: 12mm 15mm 20mm 15mm;
                     display: flex;
                     flex-direction: column;
+                    margin: 0 auto;
+                    box-shadow: 0 0 20px rgba(0,0,0,0.1);
                 }
 
                 /* ── Header con tipo de comprobante ── */
@@ -102,6 +104,13 @@ export function InvoiceTemplateDocument({ data }: InvoiceTemplateDocumentProps) 
                 .inv-doc-header-left {
                     padding: 4mm;
                     border-right: 1.5px solid #000;
+                    display: flex;
+                    gap: 4mm;
+                }
+                .inv-doc-logo {
+                    width: 80px;
+                    height: 80px;
+                    object-fit: contain;
                 }
                 .inv-doc-header-type {
                     display: flex;
@@ -294,16 +303,21 @@ export function InvoiceTemplateDocument({ data }: InvoiceTemplateDocumentProps) 
                 <div className="inv-doc-header">
                     {/* Left: Company info */}
                     <div className="inv-doc-header-left">
-                        <div className="inv-doc-company-name">
-                            {company.name || 'Nombre de la Empresa'}
-                        </div>
-                        <div className="inv-doc-company-detail">
-                            {company.address && <div>{company.address}</div>}
-                            {company.phone && <div>Tel: {company.phone}</div>}
-                            {company.email && <div>{company.email}</div>}
-                            <div>
-                                Condición frente al IVA:{' '}
-                                {FISCAL_LABELS[company.fiscal_condition] || company.fiscal_condition}
+                        {company.imagen && (
+                            <img src={company.imagen} alt="Logo" className="inv-doc-logo" />
+                        )}
+                        <div>
+                            <div className="inv-doc-company-name">
+                                {company.name || 'Nombre de la Empresa'}
+                            </div>
+                            <div className="inv-doc-company-detail">
+                                {company.address && <div>{company.address}</div>}
+                                {company.phone && <div>Tel: {company.phone}</div>}
+                                {company.email && <div>{company.email}</div>}
+                                <div>
+                                    Condición frente al IVA:{' '}
+                                    {FISCAL_LABELS[company.fiscal_condition] || company.fiscal_condition}
+                                </div>
                             </div>
                         </div>
                     </div>

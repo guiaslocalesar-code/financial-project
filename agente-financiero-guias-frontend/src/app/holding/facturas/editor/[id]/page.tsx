@@ -56,6 +56,7 @@ export default function InvoiceEditorByIdPage() {
         services,
         onSubmit,
         onEmit,
+        onUploadLogo,
         setValue,
         isSubmitting,
         isValid
@@ -124,6 +125,8 @@ export default function InvoiceEditorByIdPage() {
                         clients={clients}
                         services={services}
                         setValue={setValue}
+                        onUploadLogo={onUploadLogo}
+                        company={selectedCompany}
                         isReadOnly={isReadOnly}
                     />
                 </div>

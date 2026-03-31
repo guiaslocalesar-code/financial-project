@@ -30,6 +30,7 @@ export default function InvoiceEditorPage() {
         clients,
         services,
         onSubmit,
+        onUploadLogo,
         setValue,
         isSubmitting,
         isValid
@@ -78,6 +79,8 @@ export default function InvoiceEditorPage() {
                     clients={clients}
                     services={services}
                     setValue={setValue}
+                    onUploadLogo={onUploadLogo}
+                    company={selectedCompany}
                 />
 
                 {/* ── Toolbar Inferior (Sticky en el panel izquierdo) ── */}

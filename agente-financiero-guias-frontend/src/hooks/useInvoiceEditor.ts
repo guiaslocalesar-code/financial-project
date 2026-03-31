@@ -27,7 +27,14 @@ const invoiceItemSchema = z.object({
 })
 
 const invoiceSchema = z.object({
-    client_id: z.string().uuid('Debes seleccionar un cliente'),
+    client_id: z.string().optional().default(''),
+    
+    // Campos de cliente (manual overrides)
+    client_name: z.string().min(1, 'La razón social es requerida'),
+    client_cuit: z.string().min(1, 'El CUIT/CUIL/DNI es requerido'),
+    client_fiscal_condition: z.string().min(1, 'La condición de IVA es requerida'),
+    client_address: z.string().default(''),
+
     invoice_type: z.enum(['A', 'B', 'C']),
     point_of_sale: z.number().min(1),
     issue_date: z.string().min(1, 'La fecha es requerida'),
@@ -66,6 +73,10 @@ export function useInvoiceEditor({ initialData, onSuccess }: UseInvoiceEditorPro
             due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             currency: 'ARS',
             client_id: '',
+            client_name: '',
+            client_cuit: '',
+            client_fiscal_condition: 'CONSUMIDOR_FINAL',
+            client_address: '',
             notes: '',
             items: [
                 { service_id: '', description: '', quantity: 1, unit_price: 0, iva_rate: 21 }
@@ -82,7 +93,11 @@ export function useInvoiceEditor({ initialData, onSuccess }: UseInvoiceEditorPro
                 issue_date: initialData.issue_date,
                 due_date: initialData.due_date || initialData.issue_date,
                 currency: initialData.currency || 'ARS',
-                client_id: initialData.client_id,
+                client_id: initialData.client_id || '',
+                client_name: initialData.client?.name || '',
+                client_cuit: initialData.client?.cuit_cuil_dni || '',
+                client_fiscal_condition: initialData.client?.fiscal_condition || '', 
+                client_address: initialData.client?.address || '',
                 notes: initialData.notes || '',
                 items: initialData.items?.map(it => ({
                     service_id: it.service_id || '',
@@ -123,7 +138,20 @@ export function useInvoiceEditor({ initialData, onSuccess }: UseInvoiceEditorPro
 
     // 3. Real-time Preview Calculation
     const watchedValues = useWatch<InvoiceFormValues>({ control })
-    const formValues = watch() // Backup for fields not in useWatch if any
+
+    // Auto-fill client data when client changes
+    const currentClientId = watchedValues.client_id
+    useEffect(() => {
+        if (currentClientId) {
+            const client = clients.find(c => c.id === currentClientId)
+            if (client) {
+                setValue('client_name', client.name)
+                setValue('client_cuit', client.cuit_cuil_dni)
+                setValue('client_fiscal_condition', client.fiscal_condition)
+                setValue('client_address', [client.address, client.city].filter(Boolean).join(', '))
+            }
+        }
+    }, [currentClientId, clients, setValue])
 
     const previewData = useMemo((): InvoicePreviewData => {
         const items = (watchedValues.items || []) as InvoiceItemDraft[]
@@ -146,9 +174,6 @@ export function useInvoiceEditor({ initialData, onSuccess }: UseInvoiceEditorPro
             acc.total += (it._subtotal + it._iva_amount)
             return acc
         }, { subtotal: 0, iva: 0, total: 0 })
-
-        // Find current client
-        const currentClient = clients.find(c => c.id === watchedValues.client_id)
 
         return {
             invoice_type: (watchedValues.invoice_type as any) || 'C',
@@ -174,14 +199,14 @@ export function useInvoiceEditor({ initialData, onSuccess }: UseInvoiceEditorPro
                 imagen: selectedCompany?.imagen
             },
             client: {
-                name: currentClient?.name || 'Nombre del Cliente',
-                cuit_cuil_dni: currentClient?.cuit_cuil_dni || '—',
-                fiscal_condition: currentClient?.fiscal_condition || '—',
-                address: currentClient?.address,
-                city: currentClient?.city,
-                province: currentClient?.province,
-                email: currentClient?.email,
-                phone: currentClient?.phone
+                name: watchedValues.client_name || 'Nombre del Cliente',
+                cuit_cuil_dni: watchedValues.client_cuit || '—',
+                fiscal_condition: watchedValues.client_fiscal_condition || '—',
+                address: watchedValues.client_address || '',
+                city: '',
+                province: '',
+                email: '',
+                phone: ''
             }
         }
     }, [watchedValues, initialData, selectedCompany, clients])
@@ -209,38 +234,47 @@ export function useInvoiceEditor({ initialData, onSuccess }: UseInvoiceEditorPro
     const emitMutation = useMutation({
         mutationFn: async () => {
             if (!initialData?.id) throw new Error('Invoice not saved yet')
-            // First save changes if any
-            // const currentData = watch();
-            // await mutation.mutateAsync(currentData); 
-            // Then emit
             return api.invoices.emit(initialData.id)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invoices', selectedCompany?.id] })
             queryClient.invalidateQueries({ queryKey: ['invoice', initialData?.id] })
-            // Success navigation or notification usually handled by caller
         }
     })
 
-    const onSubmit = handleSubmit((data) => {
-        mutation.mutate(data)
+    const uploadLogoMutation = useMutation({
+        mutationFn: async (file: File) => {
+            if (!selectedCompany?.id) throw new Error('No company selected')
+            return api.companies.updateLogo(selectedCompany.id, file)
+        },
+        onSuccess: () => {
+            // Invalidate company queries to refresh the logo everywhere
+            queryClient.invalidateQueries({ queryKey: ['companies'] })
+            queryClient.invalidateQueries({ queryKey: ['company', selectedCompany?.id] })
+            // If there's a global context query for the selected company, invalidate it too
+        }
     })
+
+    const onSubmit = (data: InvoiceFormValues) => {
+        mutation.mutate(data)
+    }
 
     return {
         register,
         control,
         errors,
-        isSubmitting: isSubmitting || mutation.isPending || emitMutation.isPending,
+        isSubmitting: isSubmitting || mutation.isPending || emitMutation.isPending || uploadLogoMutation.isPending,
         fields,
         append,
         remove,
         previewData,
         clients,
         services,
-        onSubmit,
+        onSubmit: handleSubmit(onSubmit),
         onEmit: () => emitMutation.mutate(),
+        onUploadLogo: (file: File) => uploadLogoMutation.mutate(file),
         setValue,
         isValid: Object.keys(errors).length === 0,
-        isDirty: Object.keys(errors).length > 0 || !!initialData // simplicity for now
+        isDirty: Object.keys(errors).length > 0 || !!initialData
     }
 }
