@@ -10,5 +10,7 @@ from app.models.expense_budget import ExpenseBudget
 from app.models.income_budget import IncomeBudget
 from app.models.transaction import Transaction
 from app.models.payment_method import PaymentMethod
+from app.models.user import User
+from app.models.user_company import UserCompany
 from app.models.debt import Debt, DebtInstallment
 from app.models.commission import CommissionRecipient, CommissionRule, Commission

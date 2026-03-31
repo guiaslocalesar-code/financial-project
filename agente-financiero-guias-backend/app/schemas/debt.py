@@ -27,6 +27,7 @@ class DebtBase(BaseModel):
     original_amount: float
     interest_type: str | None = None
     interest_rate: float | None = None
+    interest_total: float | None = None
     total_amount: float
     installments: int = 1
     installment_amount: float | None = None
