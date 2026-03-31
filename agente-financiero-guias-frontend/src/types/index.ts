@@ -57,6 +57,7 @@ export interface Invoice {
     client_id: string
     invoice_type: 'A' | 'B' | 'C'
     invoice_number?: string
+    point_of_sale?: number
     cae?: string
     cae_expiry?: string
     issue_date: string

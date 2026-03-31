@@ -11,14 +11,16 @@ import {
     CheckCircleIcon,
     ArrowPathIcon,
     ArrowPathRoundedSquareIcon,
-    SparklesIcon
+    SparklesIcon,
+    EyeIcon,
+    PencilSquareIcon
 } from '@heroicons/react/24/outline'
 import { clsx } from 'clsx'
 import { api } from '@/services/api'
 import type { Invoice, Client, ClientService } from '@/types'
 import { useHoldingContext } from '@/context/HoldingContext'
-import { InvoiceFormModal } from '@/components/invoices/InvoiceFormModal'
 import { generateInvoiceBatch } from '@/services/invoices'
+import Link from 'next/link'
 
 const getOverdueDays = (dueDateStr: string, status: string): number => {
     if (status !== 'EMITTED') return 0
@@ -49,7 +51,6 @@ const getOverdueStatus = (days: number, status: string) => {
 
 export default function FacturasPage() {
     const queryClient = useQueryClient()
-    const [isModalOpen, setIsModalOpen] = useState(false)
     const { selectedCompany } = useHoldingContext()
 
     // Period for recurring invoices
@@ -174,13 +175,13 @@ export default function FacturasPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <button
-                        onClick={() => setIsModalOpen(true)}
+                    <Link
+                        href="/holding/facturas/editor"
                         className="btn-primary"
                     >
                         <PlusIcon className="w-5 h-5" />
                         Nueva Factura
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -223,10 +224,10 @@ export default function FacturasPage() {
                                     <h3 className="mt-2 text-sm font-semibold text-gray-900">Sin facturas</h3>
                                     <p className="mt-1 text-sm text-gray-500">Todavía no has creado facturas para este negocio.</p>
                                     <div className="mt-6">
-                                        <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+                                        <Link href="/holding/facturas/editor" className="btn-primary">
                                             <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                                             Crear Primera Factura
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             ) : (
@@ -274,19 +275,31 @@ export default function FacturasPage() {
                                                                 </span>
                                                             </td>
                                                             <td className="text-right">
-                                                                {inv.status === 'DRAFT' && (
-                                                                    <button
-                                                                        onClick={() => emitMutation.mutate(inv.id)}
-                                                                        disabled={emitMutation.isPending && emitMutation.variables === inv.id}
-                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <Link
+                                                                        href={`/holding/facturas/editor/${inv.id}`}
+                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
                                                                     >
-                                                                        {(emitMutation.isPending && emitMutation.variables === inv.id) ? (
-                                                                            <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                                                        {inv.status === 'DRAFT' ? (
+                                                                            <><PencilSquareIcon className="w-3.5 h-3.5" /> Editar</>
                                                                         ) : (
-                                                                            'Emitir (AFIP)'
+                                                                            <><EyeIcon className="w-3.5 h-3.5" /> Ver</>
                                                                         )}
-                                                                    </button>
-                                                                )}
+                                                                    </Link>
+                                                                    {inv.status === 'DRAFT' && (
+                                                                        <button
+                                                                            onClick={() => emitMutation.mutate(inv.id)}
+                                                                            disabled={emitMutation.isPending && emitMutation.variables === inv.id}
+                                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+                                                                        >
+                                                                            {(emitMutation.isPending && emitMutation.variables === inv.id) ? (
+                                                                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                                                            ) : (
+                                                                                'Emitir (AFIP)'
+                                                                            )}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     )
@@ -402,10 +415,6 @@ export default function FacturasPage() {
                 </Tab.Panels>
             </Tab.Group>
 
-            <InvoiceFormModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            />
         </div>
     )
 }
