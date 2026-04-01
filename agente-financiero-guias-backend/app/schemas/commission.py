@@ -29,8 +29,9 @@ class CommissionRuleResponse(CommissionRuleBase):
 class CommissionRecipientBase(BaseModel):
     name: str = Field(..., max_length=255)
     email: str | None = Field(None, max_length=255)
+    # These fields may not exist in older DB schemas, keep optional
     cuit: str | None = None
-    is_active: bool = True
+    is_active: bool | None = None
     type: str | None = None
 
 class CommissionRecipientCreate(CommissionRecipientBase):
@@ -50,7 +51,7 @@ class CommissionRecipientResponse(CommissionRecipientBase):
     updated_at: datetime | None = None
     rules: list[CommissionRuleResponse] = []
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class CommissionBase(BaseModel):
     transaction_id: str | UUID
@@ -71,6 +72,8 @@ class CommissionResponse(CommissionBase):
     service_name: str | None = None
     transaction_description: str | None = None
     transaction_date: date | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class CommissionPay(BaseModel):
     payment_method: str

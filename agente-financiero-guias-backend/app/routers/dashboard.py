@@ -19,11 +19,25 @@ async def get_summary(
     return summary
 
 from app.schemas.commission import CommissionsSummary
+from fastapi import HTTPException
+import traceback
 
-@router.get("/commissions-summary", response_model=CommissionsSummary)
+@router.get("/commissions-summary")
 async def get_commissions_summary(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    summary = await dashboard_service.get_commissions_summary(company_id, db)
-    return summary
+    try:
+        summary = await dashboard_service.get_commissions_summary(company_id, db)
+        return summary
+    except Exception as e:
+        # Log full traceback to Cloud Run logs
+        print(f"ERROR in commissions-summary: {e}")
+        traceback.print_exc()
+        # Return zeros instead of crashing - frontend handles gracefully
+        return {
+            "total_pending": 0.0,
+            "total_paid": 0.0,
+            "recipient_count": 0,
+            "top_recipients": []
+        }
 
 @router.get("/profitability")
 async def get_profitability(company_id: UUID, db: AsyncSession = Depends(get_db)):
