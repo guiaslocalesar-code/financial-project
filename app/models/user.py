@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Boolean, Numeric, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import TIMESTAMP
@@ -10,7 +10,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    google_id = Column(String(255), unique=True, nullable=False, index=True)
+    permissions = Column(JSONB, default=dict)
     email = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(255))
     avatar_url = Column(Text)

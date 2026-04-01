@@ -1,16 +1,13 @@
 import asyncio
-from app.database import SessionLocal
-from app.models.company import Company
 from sqlalchemy import select
+from app.database import SessionLocal
+from app.models.transaction import Transaction
 
-async def get_company():
+async def get_company_id():
     async with SessionLocal() as db:
-        result = await db.execute(select(Company).limit(1))
-        company = result.scalar()
-        if company:
-            print(company.id)
-        else:
-            print("No company found")
+        r = await db.execute(select(Transaction.company_id).limit(1))
+        cid = r.scalar()
+        print(f"COMPANY_ID: {cid}")
 
 if __name__ == "__main__":
-    asyncio.run(get_company())
+    asyncio.run(get_company_id())

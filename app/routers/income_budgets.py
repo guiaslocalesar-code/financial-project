@@ -6,7 +6,8 @@ from datetime import date
 from app.database import get_db
 from app.models.income_budget import IncomeBudget
 from app.models.transaction import Transaction
-from app.utils.enums import IncomeBudgetStatus, TransactionType
+from app.models.invoice import Invoice
+from app.utils.enums import IncomeBudgetStatus, TransactionType, InvoiceStatus
 from app.schemas.income_budget import IncomeBudgetCreate, IncomeBudgetUpdate, IncomeBudgetResponse, IncomeBudgetCollect, IncomeSummary
 from app.services.commission_service import calculate_commissions_for_income
 from typing import List
@@ -16,6 +17,10 @@ router = APIRouter(prefix="/income-budgets", tags=["Income Budgets"])
 @router.post("/", response_model=IncomeBudgetResponse)
 async def create_income_budget(budget_in: IncomeBudgetCreate, db: AsyncSession = Depends(get_db)):
     budget = IncomeBudget(**budget_in.model_dump())
+    if budget.requires_invoice and budget.iva_rate is not None:
+        budget.iva_amount = float(budget.budgeted_amount) * float(budget.iva_rate) / 100.0
+    else:
+        budget.iva_amount = 0.0
     db.add(budget)
     await db.commit()
     await db.refresh(budget)
@@ -50,17 +55,38 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
     if budget.status == IncomeBudgetStatus.COLLECTED:
         raise HTTPException(status_code=400, detail="Budget already collected")
 
-    final_amount = collect_in.actual_amount if collect_in.actual_amount is not None else budget.budgeted_amount
-    
+    # Buscar factura emitida
+    inv_result = await db.execute(
+        select(Invoice).where(
+            Invoice.company_id == budget.company_id,
+            Invoice.client_id == budget.client_id,
+            Invoice.status == InvoiceStatus.EMITTED
+        )
+    )
+    invoice = inv_result.scalar_one_or_none()
+
+    if invoice:
+        transaction_amount = float(invoice.total)
+    else:
+        # Si no hay factura, el default a cobrar es el base + IVA
+        base_to_collect = float(budget.budgeted_amount) + float(budget.iva_amount or 0.0)
+        transaction_amount = float(collect_in.actual_amount) if collect_in.actual_amount is not None else base_to_collect
+
+    invoice_id = invoice.id if invoice else None
+
     # Create transaction
     transaction = Transaction(
         company_id=budget.company_id,
         client_id=budget.client_id,
+        invoice_id=invoice_id,
         income_budget_id=budget.id,
         service_id=budget.service_id,
         type=TransactionType.INCOME,
         is_budgeted=True,
-        amount=final_amount,
+        requires_invoice=budget.requires_invoice,
+        iva_rate=budget.iva_rate,
+        iva_amount=budget.iva_amount,
+        amount=transaction_amount,
         payment_method=collect_in.payment_method,
         description=f"Cobro presupuesto servicio",
         transaction_date=date.today()
@@ -69,7 +95,7 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
     await db.flush() # Get transaction ID
     
     budget.status = IncomeBudgetStatus.COLLECTED
-    budget.actual_amount = final_amount
+    budget.actual_amount = transaction_amount
     budget.transaction_id = transaction.id
     
     # Calcular comisiones automáticamente sobre el ingreso bruto

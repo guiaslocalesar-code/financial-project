@@ -22,6 +22,7 @@ class Client(Base):
     province: Mapped[str] = mapped_column(String(100), nullable=True)
     zip_code: Mapped[str] = mapped_column(String(10), nullable=True)
     imagen: Mapped[str] = mapped_column(Text, nullable=True)
+    requires_invoice: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

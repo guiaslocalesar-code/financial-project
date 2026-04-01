@@ -52,7 +52,7 @@ async def add_user_to_company(
         # Por ahora creamos un registro básico.
         user = User(
             email=str(user_in.user_email),
-            google_id=f"pending_{user_in.user_email}", # Placeholder
+            permissions={"status": "pending"}, # Placeholder instead of google_id
             is_active=True
         )
         db.add(user)

@@ -17,6 +17,7 @@ class ClientBase(BaseModel):
     province: str | None = Field(None, max_length=100)
     zip_code: str | None = Field(None, max_length=10)
     imagen: str | None = None
+    requires_invoice: bool = True
 
 class ClientCreate(ClientBase):
     pass
@@ -34,6 +35,7 @@ class ClientUpdate(BaseModel):
     province: str | None = None
     zip_code: str | None = None
     imagen: str | None = None
+    requires_invoice: bool | None = None
     is_active: bool | None = None
 
 class ClientResponse(ClientBase):

@@ -1,32 +1,115 @@
+"""
+routers/commissions.py
+──────────────────────
+Router completo del módulo de comisiones.
+Endpoints:
+  CRUD Destinatarios  : POST/GET/PATCH/DELETE  /commission-recipients
+  CRUD Reglas         : POST/GET/PATCH/DELETE  /commission-rules
+  Comisiones          : GET  /commissions/pending
+                        POST /commissions/{id}/pay
+                        POST /commissions/generate
+                        GET  /commissions/recipient/{id}/summary
+  Dashboard widget    : GET  /dashboard/commissions-summary
+"""
+
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
-from uuid import UUID
-from datetime import date
 from typing import List, Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.client import Client
+from app.models.commission import Commission
 from app.models.commission_recipient import CommissionRecipient
 from app.models.commission_rule import CommissionRule
-from app.models.commission import Commission
-from app.models.transaction import Transaction
-from app.utils.enums import CommissionStatus, TransactionType, RecipientType
+from app.models.service import Service
 from app.schemas.commission import (
-    CommissionRecipientCreate, CommissionRecipientUpdate, CommissionRecipientResponse,
-    CommissionRuleCreate, CommissionRuleUpdate, CommissionRuleResponse,
-    CommissionResponse, RecipientSummary, CommissionsDashboard, TopRecipient
+    CommissionRecipientCreate,
+    CommissionRecipientResponse,
+    CommissionRecipientUpdate,
+    CommissionResponse,
+    CommissionRuleCreate,
+    CommissionRuleResponse,
+    CommissionRuleUpdate,
+    CommissionsDashboard,
+    GenerateCommissionsResponse,
+    PayCommissionRequest,
+    PayCommissionResponse,
+    RecipientSummary,
+    TopRecipient,
 )
-from app.services.commission_service import calculate_commissions_for_income
+from app.services.commission_service import (
+    calculate_commissions_for_income,
+    generate_missing_commissions,
+    pay_commission,
+)
+from app.utils.enums import CommissionStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Commissions"])
 
 
+# ── Helpers internos ──────────────────────────────────────────────────────────
+
+async def _enrich_commissions(
+    db: AsyncSession, commissions: list[Commission]
+) -> list[CommissionResponse]:
+    """
+    Enriquece una lista de comisiones con nombres de recipient, cliente y servicio.
+    Hace una sola consulta por entidad para evitar N+1.
+    """
+    if not commissions:
+        return []
+
+    # Recolectar IDs únicos
+    recipient_ids = {c.recipient_id for c in commissions}
+    client_ids = {c.client_id for c in commissions}
+    service_ids = {c.service_id for c in commissions}
+
+    # Batch fetch
+    rec_map: dict[UUID, str] = {}
+    if recipient_ids:
+        rows = await db.execute(
+            select(CommissionRecipient.id, CommissionRecipient.name)
+            .where(CommissionRecipient.id.in_(recipient_ids))
+        )
+        rec_map = {r.id: r.name for r in rows}
+
+    cli_map: dict[str, str] = {}
+    if client_ids:
+        rows = await db.execute(
+            select(Client.id, Client.name).where(Client.id.in_(client_ids))
+        )
+        cli_map = {r.id: r.name for r in rows}
+
+    svc_map: dict[str, str] = {}
+    if service_ids:
+        rows = await db.execute(
+            select(Service.id, Service.name).where(Service.id.in_(service_ids))
+        )
+        svc_map = {r.id: r.name for r in rows}
+
+    result = []
+    for c in commissions:
+        item = CommissionResponse.model_validate(c)
+        item.recipient_name = rec_map.get(c.recipient_id)
+        item.client_name = cli_map.get(c.client_id)
+        item.service_name = svc_map.get(c.service_id)
+        result.append(item)
+
+    return result
+
+
 # ── Commission Recipients CRUD ─────────────────────────────────────────────────
 
 @router.post("/commission-recipients", response_model=CommissionRecipientResponse)
-async def create_recipient(body: CommissionRecipientCreate, db: AsyncSession = Depends(get_db)):
+async def create_recipient(
+    body: CommissionRecipientCreate,
+    db: AsyncSession = Depends(get_db),
+):
     recipient = CommissionRecipient(**body.model_dump())
     db.add(recipient)
     await db.commit()
@@ -38,25 +121,30 @@ async def create_recipient(body: CommissionRecipientCreate, db: AsyncSession = D
 async def list_recipients(
     company_id: UUID,
     only_active: bool = True,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     q = select(CommissionRecipient).where(CommissionRecipient.company_id == company_id)
     if only_active:
-        q = q.where(CommissionRecipient.is_active == True)
+        q = q.where(CommissionRecipient.is_active == True)  # noqa: E712
     result = await db.execute(q)
     return result.scalars().all()
 
 
-@router.patch("/commission-recipients/{recipient_id}", response_model=CommissionRecipientResponse)
+@router.patch(
+    "/commission-recipients/{recipient_id}",
+    response_model=CommissionRecipientResponse,
+)
 async def update_recipient(
     recipient_id: UUID,
     body: CommissionRecipientUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(CommissionRecipient).where(CommissionRecipient.id == recipient_id))
+    result = await db.execute(
+        select(CommissionRecipient).where(CommissionRecipient.id == recipient_id)
+    )
     recipient = result.scalar_one_or_none()
     if not recipient:
-        raise HTTPException(404, "Recipient not found")
+        raise HTTPException(404, "Recipient no encontrado")
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(recipient, field, value)
     await db.commit()
@@ -65,11 +153,16 @@ async def update_recipient(
 
 
 @router.delete("/commission-recipients/{recipient_id}", status_code=204)
-async def delete_recipient(recipient_id: UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(CommissionRecipient).where(CommissionRecipient.id == recipient_id))
+async def delete_recipient(
+    recipient_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(CommissionRecipient).where(CommissionRecipient.id == recipient_id)
+    )
     recipient = result.scalar_one_or_none()
     if not recipient:
-        raise HTTPException(404, "Recipient not found")
+        raise HTTPException(404, "Recipient no encontrado")
     recipient.is_active = False
     await db.commit()
 
@@ -78,10 +171,12 @@ async def delete_recipient(recipient_id: UUID, db: AsyncSession = Depends(get_db
 
 @router.post("/commission-rules", response_model=CommissionRuleResponse)
 async def create_rule(body: CommissionRuleCreate, db: AsyncSession = Depends(get_db)):
-    # Verify recipient exists
-    r = await db.execute(select(CommissionRecipient).where(CommissionRecipient.id == body.recipient_id))
+    # Verificar que el recipient exista
+    r = await db.execute(
+        select(CommissionRecipient).where(CommissionRecipient.id == body.recipient_id)
+    )
     if not r.scalar_one_or_none():
-        raise HTTPException(400, "Recipient not found")
+        raise HTTPException(400, "Recipient no encontrado")
     try:
         rule = CommissionRule(**body.model_dump())
         db.add(rule)
@@ -90,20 +185,21 @@ async def create_rule(body: CommissionRuleCreate, db: AsyncSession = Depends(get
         return rule
     except Exception as e:
         await db.rollback()
-        if "uq_commission_rule" in str(e):
+        err = str(e)
+        if "uq_commission_rule" in err or "unique" in err.lower():
             raise HTTPException(400, "Ya existe una regla para este recipient/cliente/servicio")
-        raise HTTPException(500, str(e))
+        raise HTTPException(500, f"Error interno: {err}")
 
 
 @router.get("/commission-rules", response_model=List[CommissionRuleResponse])
 async def list_rules(
     company_id: UUID,
     only_active: bool = True,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     q = select(CommissionRule).where(CommissionRule.company_id == company_id)
     if only_active:
-        q = q.where(CommissionRule.is_active == True)
+        q = q.where(CommissionRule.is_active == True)  # noqa: E712
     result = await db.execute(q)
     return result.scalars().all()
 
@@ -112,12 +208,12 @@ async def list_rules(
 async def update_rule(
     rule_id: UUID,
     body: CommissionRuleUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(CommissionRule).where(CommissionRule.id == rule_id))
     rule = result.scalar_one_or_none()
     if not rule:
-        raise HTTPException(404, "Rule not found")
+        raise HTTPException(404, "Regla no encontrada")
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(rule, field, value)
     await db.commit()
@@ -130,7 +226,7 @@ async def delete_rule(rule_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CommissionRule).where(CommissionRule.id == rule_id))
     rule = result.scalar_one_or_none()
     if not rule:
-        raise HTTPException(404, "Rule not found")
+        raise HTTPException(404, "Regla no encontrada")
     rule.is_active = False
     await db.commit()
 
@@ -138,104 +234,144 @@ async def delete_rule(rule_id: UUID, db: AsyncSession = Depends(get_db)):
 # ── Commissions Management ─────────────────────────────────────────────────────
 
 @router.get("/commissions/pending", response_model=List[CommissionResponse])
-async def get_pending_commissions(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Commission)
-        .where(
-            Commission.company_id == company_id,
-            Commission.status == CommissionStatus.PENDING
-        )
-        .order_by(Commission.created_at.desc())
+async def get_pending_commissions(
+    company_id: UUID,
+    recipient_id: Optional[UUID] = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Lista todas las comisiones pendientes de una empresa.
+    Opcionalmente filtra por recipient_id.
+    Incluye nombre de destinatario, cliente y servicio (sin N+1).
+    """
+    q = select(Commission).where(
+        Commission.company_id == company_id,
+        Commission.status == CommissionStatus.PENDING,
     )
+    if recipient_id:
+        q = q.where(Commission.recipient_id == recipient_id)
+
+    q = q.order_by(Commission.created_at.desc())
+    result = await db.execute(q)
     commissions = result.scalars().all()
 
-    # Enrich with recipient name
-    output = []
-    for c in commissions:
-        r = await db.execute(select(CommissionRecipient).where(CommissionRecipient.id == c.recipient_id))
-        rec = r.scalar_one_or_none()
-        item = CommissionResponse.model_validate(c)
-        item.recipient_name = rec.name if rec else None
-        output.append(item)
-    return output
+    return await _enrich_commissions(db, commissions)
 
 
-@router.post("/commissions/{commission_id}/pay")
-async def pay_commission(commission_id: UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Commission).where(Commission.id == commission_id))
-    commission = result.scalar_one_or_none()
-    if not commission:
-        raise HTTPException(404, "Commission not found")
-    if commission.status != CommissionStatus.PENDING:
-        raise HTTPException(400, f"La comisión ya está en estado '{commission.status}'")
+@router.post("/commissions/{commission_id}/pay", response_model=PayCommissionResponse)
+async def pay_commission_endpoint(
+    commission_id: UUID,
+    body: PayCommissionRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Paga una comisión pendiente de forma atómica.
 
-    # Obtener nombre del recipient para la descripción
-    r = await db.execute(select(CommissionRecipient).where(CommissionRecipient.id == commission.recipient_id))
-    recipient = r.scalar_one_or_none()
-    recipient_name = recipient.name if recipient else "Desconocido"
-
-    # Crear transaction de egreso
-    expense_tx = Transaction(
-        company_id=commission.company_id,
-        type=TransactionType.EXPENSE,
-        is_budgeted=False,
-        amount=float(commission.commission_amount),
-        description=f"Pago comisión a {recipient_name} — {commission.service_id}",
-        transaction_date=date.today(),
-    )
-    db.add(expense_tx)
-    await db.flush()
-
-    commission.status = CommissionStatus.PAID
-    commission.payment_transaction_id = expense_tx.id
-
-    await db.commit()
-    return {"transaction_id": str(expense_tx.id), "message": "Comisión pagada"}
-
-
-@router.post("/commissions/generate")
-async def generate_missing_commissions(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    """Recalcula comisiones para ingresos que aún no las tienen."""
-    # IDs de ingresos que ya tienen comisión
-    existing = await db.execute(
-        select(Commission.income_transaction_id).where(Commission.company_id == company_id)
-    )
-    existing_ids = {row[0] for row in existing.all()}
-
-    # Ingresos sin comisión
-    income_res = await db.execute(
-        select(Transaction).where(
-            Transaction.company_id == company_id,
-            Transaction.type == TransactionType.INCOME,
-            Transaction.id.notin_(existing_ids) if existing_ids else True
+    · Valida que la comisión exista y esté en estado PENDING.
+    · Crea una Transaction de tipo EXPENSE (expense_origin = unbudgeted).
+    · amount = actual_amount si se provee, sino commission_amount.
+    · payment_method y payment_date vienen del frontend.
+    · Guarda payment_transaction_id en la comisión.
+    · Cambia status a PAID.
+    · Si falla el commit, el estado NO se modifica (atómico).
+    """
+    try:
+        expense_tx = await pay_commission(
+            db=db,
+            commission_id=commission_id,
+            payment_method=body.payment_method,
+            payment_date=body.payment_date,
+            actual_amount=body.actual_amount,
+            payment_method_id=body.payment_method_id,
+            description=body.description,
         )
+    except ValueError as e:
+        msg = str(e)
+        status_code = 404 if "no encontrada" in msg else 400
+        raise HTTPException(status_code, msg)
+
+    # Commit atómico: si falla aquí el estado de la comisión vuelve a PENDING
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        logger.error("Error al hacer commit del pago de comisión %s: %s", commission_id, e)
+        raise HTTPException(500, "Error interno al guardar el pago. La comisión NO fue modificada.")
+
+    return PayCommissionResponse(
+        commission_id=commission_id,
+        transaction_id=expense_tx.id,
+        amount_paid=float(expense_tx.amount),
+        payment_method=body.payment_method.value,
+        payment_date=body.payment_date,
     )
-    incomes = income_res.scalars().all()
 
-    total_generated = 0
-    for tx in incomes:
-        commissions = await calculate_commissions_for_income(db, tx.id)
-        total_generated += len(commissions)
 
+@router.post("/commissions/generate", response_model=GenerateCommissionsResponse)
+async def generate_commissions_endpoint(
+    company_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Busca transactions de ingresos que todavía no tengan comisiones generadas
+    y aplica las reglas vigentes.  Idempotente: no genera duplicados.
+    """
+    stats = await generate_missing_commissions(db, company_id)
     await db.commit()
-    return {"message": f"Generadas {total_generated} comisiones para {len(incomes)} ingresos"}
+    return GenerateCommissionsResponse(
+        **stats,
+        message=(
+            f"Procesadas {stats['transactions_procesadas']} transacciones. "
+            f"Generadas {stats['comisiones_generadas']} comisiones nuevas."
+        ),
+    )
 
 
-@router.get("/commissions/recipient/{recipient_id}/summary", response_model=RecipientSummary)
-async def get_recipient_summary(recipient_id: UUID, db: AsyncSession = Depends(get_db)):
-    r = await db.execute(select(CommissionRecipient).where(CommissionRecipient.id == recipient_id))
+@router.get(
+    "/commissions/recipient/{recipient_id}/summary",
+    response_model=RecipientSummary,
+)
+async def get_recipient_summary(
+    recipient_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Resumen de comisiones para un destinatario:
+      · total_base          — suma de bases (subtotales sin IVA sobre los que se calculó)
+      · total_pendiente     — suma commission_amount de estado PENDING
+      · total_pagado        — suma commission_amount de estado PAID
+      · porcentaje_cumplimiento — total_pagado / (total_pendiente + total_pagado) × 100
+    """
+    r = await db.execute(
+        select(CommissionRecipient).where(CommissionRecipient.id == recipient_id)
+    )
     recipient = r.scalar_one_or_none()
     if not recipient:
-        raise HTTPException(404, "Recipient not found")
+        raise HTTPException(404, "Recipient no encontrado")
 
-    commissions_res = await db.execute(
-        select(Commission).where(Commission.recipient_id == recipient_id)
+    # Agregados en una sola query por estado
+    agg_res = await db.execute(
+        select(
+            Commission.status,
+            func.sum(Commission.base_amount).label("sum_base"),
+            func.sum(Commission.commission_amount).label("sum_commission"),
+        )
+        .where(Commission.recipient_id == recipient_id)
+        .group_by(Commission.status)
     )
-    all_comm = commissions_res.scalars().all()
+    rows = agg_res.all()
 
-    total_base = sum(float(c.base_amount) for c in all_comm)
-    total_pending = sum(float(c.commission_amount) for c in all_comm if c.status == CommissionStatus.PENDING)
-    total_paid = sum(float(c.commission_amount) for c in all_comm if c.status == CommissionStatus.PAID)
+    total_base = 0.0
+    total_pending = 0.0
+    total_paid = 0.0
+
+    for row in rows:
+        total_base += float(row.sum_base or 0)
+        if row.status == CommissionStatus.PENDING:
+            total_pending += float(row.sum_commission or 0)
+        elif row.status == CommissionStatus.PAID:
+            total_paid += float(row.sum_commission or 0)
+
     total = total_pending + total_paid
     cumplimiento = (total_paid / total * 100) if total > 0 else 0.0
 
@@ -245,50 +381,91 @@ async def get_recipient_summary(recipient_id: UUID, db: AsyncSession = Depends(g
         total_base=total_base,
         total_pendiente=total_pending,
         total_pagado=total_paid,
-        porcentaje_cumplimiento=round(cumplimiento, 2)
+        porcentaje_cumplimiento=round(cumplimiento, 2),
     )
 
 
 # ── Dashboard Widget ───────────────────────────────────────────────────────────
 
 @router.get("/dashboard/commissions-summary", response_model=CommissionsDashboard)
-async def get_commissions_summary(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    # Totales
-    pending_res = await db.execute(
-        select(func.sum(Commission.commission_amount))
-        .where(Commission.company_id == company_id, Commission.status == CommissionStatus.PENDING)
-    )
-    total_pending = float(pending_res.scalar() or 0)
-
-    paid_res = await db.execute(
-        select(func.sum(Commission.commission_amount))
-        .where(Commission.company_id == company_id, Commission.status == CommissionStatus.PAID)
-    )
-    total_paid = float(paid_res.scalar() or 0)
-
-    # Top recipients
-    recipients_res = await db.execute(
-        select(CommissionRecipient).where(
-            CommissionRecipient.company_id == company_id, CommissionRecipient.is_active == True
+async def get_commissions_summary(
+    company_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Resumen de comisiones para el dashboard:
+      · total_pendiente  — suma de comisiones PENDING
+      · total_pagado     — suma de comisiones PAID
+      · top_recipients   — hasta 5 destinatarios ordenados por total
+    """
+    # Totales globales por estado con una sola query
+    totals_res = await db.execute(
+        select(
+            Commission.status,
+            func.sum(Commission.commission_amount).label("total"),
         )
+        .where(Commission.company_id == company_id)
+        .group_by(Commission.status)
     )
-    all_recipients = recipients_res.scalars().all()
+    total_pending = 0.0
+    total_paid = 0.0
+    for row in totals_res:
+        if row.status == CommissionStatus.PENDING:
+            total_pending = float(row.total or 0)
+        elif row.status == CommissionStatus.PAID:
+            total_paid = float(row.total or 0)
 
-    top_list = []
-    for rec in all_recipients:
-        comm_res = await db.execute(
-            select(Commission).where(Commission.recipient_id == rec.id)
+    # Top recipients — una sola query con GROUP BY
+    top_res = await db.execute(
+        select(
+            Commission.recipient_id,
+            Commission.status,
+            func.sum(Commission.commission_amount).label("total"),
         )
-        comms = comm_res.scalars().all()
-        total = sum(float(c.commission_amount) for c in comms)
-        pending = sum(float(c.commission_amount) for c in comms if c.status == CommissionStatus.PENDING)
-        if total > 0:
-            top_list.append(TopRecipient(name=rec.name, total=total, pending=pending))
+        .where(Commission.company_id == company_id)
+        .group_by(Commission.recipient_id, Commission.status)
+    )
 
-    top_list.sort(key=lambda x: x.total, reverse=True)
+    # Agrupar por recipient_id
+    from collections import defaultdict
+    by_recipient: dict[UUID, dict] = defaultdict(
+        lambda: {"total": 0.0, "pending": 0.0, "paid": 0.0}
+    )
+    for row in top_res:
+        rid = row.recipient_id
+        by_recipient[rid]["total"] += float(row.total or 0)
+        if row.status == CommissionStatus.PENDING:
+            by_recipient[rid]["pending"] += float(row.total or 0)
+        elif row.status == CommissionStatus.PAID:
+            by_recipient[rid]["paid"] += float(row.total or 0)
+
+    # Batch fetch de nombres de recipients
+    if by_recipient:
+        names_res = await db.execute(
+            select(CommissionRecipient.id, CommissionRecipient.name)
+            .where(CommissionRecipient.id.in_(by_recipient.keys()))
+        )
+        names_map = {r.id: r.name for r in names_res}
+    else:
+        names_map = {}
+
+    # Construir lista ordenada por total desc
+    top_list: list[TopRecipient] = []
+    for rid, data in by_recipient.items():
+        top_list.append(
+            TopRecipient(
+                recipient_id=rid,
+                name=names_map.get(rid, "Desconocido"),
+                total_comisiones=data["total"],
+                total_pendiente=data["pending"],
+                total_pagado=data["paid"],
+            )
+        )
+
+    top_list.sort(key=lambda x: x.total_comisiones, reverse=True)
 
     return CommissionsDashboard(
         total_pendiente=total_pending,
         total_pagado=total_paid,
-        top_recipients=top_list[:5]
+        top_recipients=top_list[:5],
     )

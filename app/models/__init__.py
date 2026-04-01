@@ -16,3 +16,4 @@ from app.models.user import User, UserCompany
 from app.models.commission_recipient import CommissionRecipient
 from app.models.commission_rule import CommissionRule
 from app.models.commission import Commission
+from afip_integration.models import AfipToken

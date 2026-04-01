@@ -14,6 +14,9 @@ class TransactionBase(BaseModel):
     type: TransactionType
     is_budgeted: bool = False
     expense_origin: ExpenseOrigin | None = None
+    requires_invoice: bool = True
+    iva_rate: float | None = 0.0
+    iva_amount: float | None = 0.0
     amount: float
     currency: str = "ARS"
     exchange_rate: float = 1.0
@@ -26,6 +29,9 @@ class TransactionCreate(TransactionBase):
 
 class TransactionUpdate(BaseModel):
     amount: float | None = None
+    requires_invoice: bool | None = None
+    iva_rate: float | None = None
+    iva_amount: float | None = None
     payment_method: PaymentMethod | None = None
     description: str | None = None
     transaction_date: date | None = None

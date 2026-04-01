@@ -43,7 +43,7 @@ async def login_or_create_user(google_token: str, db) -> Optional[dict]:
     
     if not user:
         user = User(
-            google_id=google_user["id"],
+            permissions={"google_id": google_user["id"]},
             email=google_user["email"],
             name=google_user.get("name"),
             avatar_url=google_user.get("picture")

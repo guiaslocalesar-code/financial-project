@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import (
     companies, clients, services, client_services, 
-    expenses, budgets, invoices, transactions, 
+    expenses, budgets, transactions, 
     dashboard, income_budgets, debts,
     auth, users, commissions
 )
+from afip_integration.routers import invoices as afip_invoices
 
 app = FastAPI(
     title="Marketing Agency Financial API",
@@ -33,7 +34,7 @@ app.include_router(client_services.router, prefix="/api/v1")
 app.include_router(expenses.router, prefix="/api/v1")
 app.include_router(budgets.router, prefix="/api/v1")
 app.include_router(income_budgets.router, prefix="/api/v1")
-app.include_router(invoices.router, prefix="/api/v1")
+app.include_router(afip_invoices.router, prefix="/api/v1")
 app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(debts.router, prefix="/api/v1")

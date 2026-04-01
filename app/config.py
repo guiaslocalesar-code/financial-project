@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     GCS_BUCKET_NAME: str = "agente-financiero-files" # Default value if not in .env
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
+    AFIP_FERNET_KEY: str = ""
+    AFIP_ENVIRONMENT: str = "homologacion"
 
     @property
     def cors_origins(self) -> List[str]:

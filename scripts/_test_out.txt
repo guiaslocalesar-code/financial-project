@@ -1,0 +1,39 @@
+﻿============================================================
+MIGRACION CLOUD SQL (GCP) -> SUPABASE via REST
+Fecha: 2026-03-23 13:14:45
+Tablas: debt_installments, commission_recipients, commission_rules, commissions
+============================================================
+
+=== VERIFICACION DE TABLAS ===
+Conectando a Cloud SQL GCP...
+OK - Cloud SQL conectado
+Verificando Supabase REST API...
+Supabase HTTP status: 401
+
+Tablas en Cloud SQL GCP (20):
+  alembic_version  (1 rows)
+  client_services  (84 rows)
+  clients  (38 rows)
+  commission_recipients  (0 rows)
+  commission_rules  (0 rows)
+  commissions  (0 rows)
+  companies  (2 rows)
+  debt_installments  (28 rows)
+  debts  (8 rows)
+  expense_budgets  (438 rows)
+  expense_categories  (112 rows)
+  expense_types  (11 rows)
+  income_budgets  (800 rows)
+  invoice_items  (0 rows)
+  invoices  (0 rows)
+  payment_methods  (6 rows)
+  services  (12 rows)
+  transactions  (1346 rows)
+  user_companies  (0 rows)
+  users  (0 rows)
+
+Verificando tablas faltantes en Supabase:
+  OK:    debt_installments  (28 rows en Supabase)
+  FALTA: commission_recipients  (no existe en Supabase)
+  FALTA: commission_rules  (no existe en Supabase)
+  FALTA: commissions  (no existe en Supabase)

@@ -11,6 +11,9 @@ class IncomeBudgetBase(BaseModel):
     planned_date: date
     period_month: int
     period_year: int
+    requires_invoice: bool = True
+    iva_rate: float | None = 0.0
+    iva_amount: float | None = 0.0
     is_recurring: bool = True
 
 class IncomeBudgetCreate(IncomeBudgetBase):
@@ -18,6 +21,9 @@ class IncomeBudgetCreate(IncomeBudgetBase):
 
 class IncomeBudgetUpdate(BaseModel):
     budgeted_amount: float | None = None
+    requires_invoice: bool | None = None
+    iva_rate: float | None = None
+    iva_amount: float | None = None
     actual_amount: float | None = None
     planned_date: date | None = None
     is_recurring: bool | None = None
