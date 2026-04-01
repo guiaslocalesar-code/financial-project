@@ -126,53 +126,69 @@ class DashboardService:
         from app.models.commission import Commission, CommissionRecipient
         from app.utils.enums import CommissionStatus
 
-        # Sum pending
-        pending_query = select(func.sum(Commission.amount)).select_from(Commission).join(
-            CommissionRecipient, Commission.recipient_id == CommissionRecipient.id
-        ).where(
-            CommissionRecipient.company_id == company_id,
-            Commission.status == CommissionStatus.PENDING
-        )
-        pending_res = await db.execute(pending_query)
-        total_pending = float(pending_res.scalar() or 0.0)
+        total_pending = 0.0
+        total_paid = 0.0
+        recipient_count = 0
+        top_recipients = []
 
-        # Sum paid
-        paid_query = select(func.sum(Commission.amount)).select_from(Commission).join(
-            CommissionRecipient, Commission.recipient_id == CommissionRecipient.id
-        ).where(
-            CommissionRecipient.company_id == company_id,
-            Commission.status == CommissionStatus.PAID
-        )
-        paid_res = await db.execute(paid_query)
-        total_paid = float(paid_res.scalar() or 0.0)
+        try:
+            pending_res = await db.execute(
+                select(func.sum(Commission.amount))
+                .select_from(Commission)
+                .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
+                .where(
+                    CommissionRecipient.company_id == company_id,
+                    Commission.status == CommissionStatus.PENDING
+                )
+            )
+            total_pending = float(pending_res.scalar() or 0.0)
+        except Exception as e:
+            print(f"Error querying pending commissions: {e}")
 
-        # Count active recipients
-        recip_query = select(func.count(CommissionRecipient.id)).select_from(CommissionRecipient).where(
-            CommissionRecipient.company_id == company_id
-        )
-        recip_res = await db.execute(recip_query)
-        recipient_count = int(recip_res.scalar() or 0)
+        try:
+            paid_res = await db.execute(
+                select(func.sum(Commission.amount))
+                .select_from(Commission)
+                .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
+                .where(
+                    CommissionRecipient.company_id == company_id,
+                    Commission.status == CommissionStatus.PAID
+                )
+            )
+            total_paid = float(paid_res.scalar() or 0.0)
+        except Exception as e:
+            print(f"Error querying paid commissions: {e}")
 
-        # Top recipients by total earned (pending + paid)
-        top_query = select(
-            CommissionRecipient.id,
-            CommissionRecipient.name,
-            func.sum(Commission.amount).label('total_earned')
-        ).select_from(CommissionRecipient).join(
-            Commission, Commission.recipient_id == CommissionRecipient.id
-        ).where(
-            CommissionRecipient.company_id == company_id
-        ).group_by(
-            CommissionRecipient.id, CommissionRecipient.name
-        ).order_by(
-            func.sum(Commission.amount).desc()
-        ).limit(5)
-        
-        top_res = await db.execute(top_query)
-        top_recipients = [
-            {"id": row.id, "name": row.name, "total_earned": float(row.total_earned)}
-            for row in top_res
-        ]
+        try:
+            recip_res = await db.execute(
+                select(func.count(CommissionRecipient.id))
+                .select_from(CommissionRecipient)
+                .where(CommissionRecipient.company_id == company_id)
+            )
+            recipient_count = int(recip_res.scalar() or 0)
+        except Exception as e:
+            print(f"Error querying recipient count: {e}")
+
+        try:
+            top_res = await db.execute(
+                select(
+                    CommissionRecipient.id,
+                    CommissionRecipient.name,
+                    func.sum(Commission.amount).label('total_earned')
+                )
+                .select_from(CommissionRecipient)
+                .join(Commission, Commission.recipient_id == CommissionRecipient.id)
+                .where(CommissionRecipient.company_id == company_id)
+                .group_by(CommissionRecipient.id, CommissionRecipient.name)
+                .order_by(func.sum(Commission.amount).desc())
+                .limit(5)
+            )
+            top_recipients = [
+                {"id": str(row.id), "name": row.name, "total_earned": float(row.total_earned)}
+                for row in top_res
+            ]
+        except Exception as e:
+            print(f"Error querying top recipients: {e}")
 
         return {
             "total_pending": total_pending,
