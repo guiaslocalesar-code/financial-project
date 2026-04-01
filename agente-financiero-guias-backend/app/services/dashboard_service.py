@@ -89,10 +89,17 @@ class DashboardService:
             "pending_to_pay": pending_to_pay
         }
 
-    async def get_profitability(self, company_id: UUID, db: AsyncSession):
+    async def get_profitability(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
+        from app.models.invoice import Invoice
         # Simplified profitability by service
-        # 1. Income by service
+        # 1. Income by service (using Invoice.issue_date for filtering)
         income_query = select(InvoiceItem.service_id, func.sum(InvoiceItem.subtotal).label("income")) \
+            .join(Invoice, InvoiceItem.invoice_id == Invoice.id) \
+            .where(
+                Invoice.company_id == company_id,
+                Invoice.issue_date >= start_date,
+                Invoice.issue_date <= end_date
+            ) \
             .group_by(InvoiceItem.service_id)
         
         income_data = await db.execute(income_query)
@@ -100,7 +107,12 @@ class DashboardService:
 
         # 2. Expense by service
         expense_query = select(Transaction.service_id, func.sum(Transaction.amount).label("expense")) \
-            .where(Transaction.type == TransactionType.EXPENSE) \
+            .where(
+                Transaction.company_id == company_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.transaction_date >= start_date,
+                Transaction.transaction_date <= end_date
+            ) \
             .group_by(Transaction.service_id)
         
         expense_data = await db.execute(expense_query)
@@ -123,7 +135,7 @@ class DashboardService:
         
         return profitability
 
-    async def get_commissions_summary(self, company_id: UUID, db: AsyncSession):
+    async def get_commissions_summary(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
         from app.models.commission import Commission, CommissionRecipient
         from app.utils.enums import CommissionStatus
 
@@ -132,6 +144,7 @@ class DashboardService:
         recipient_count = 0
         top_recipients = []
 
+        # We filter based on when they were created or updated within the range
         try:
             pending_res = await db.execute(
                 select(func.sum(Commission.amount))
@@ -139,7 +152,9 @@ class DashboardService:
                 .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
                 .where(
                     CommissionRecipient.company_id == company_id,
-                    Commission.status == CommissionStatus.PENDING
+                    Commission.status == CommissionStatus.PENDING,
+                    func.cast(Commission.created_at, date) >= start_date,
+                    func.cast(Commission.created_at, date) <= end_date
                 )
             )
             total_pending = float(pending_res.scalar() or 0.0)
@@ -153,7 +168,9 @@ class DashboardService:
                 .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
                 .where(
                     CommissionRecipient.company_id == company_id,
-                    Commission.status == CommissionStatus.PAID
+                    Commission.status == CommissionStatus.PAID,
+                    func.cast(Commission.updated_at, date) >= start_date,
+                    func.cast(Commission.updated_at, date) <= end_date
                 )
             )
             total_paid = float(paid_res.scalar() or 0.0)

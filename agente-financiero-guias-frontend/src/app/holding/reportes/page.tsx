@@ -63,7 +63,10 @@ export default function ReportesPage() {
         queryKey: ['dashboard-profitability', selectedCompany?.id, month, year],
         queryFn: async () => {
             if (!selectedCompany) return []
-            const res = await api.dashboard.profitability(selectedCompany.id, month, year)
+            const baseDate = new Date(year, month - 1, 1)
+            const startDate = format(startOfMonth(baseDate), 'yyyy-MM-dd')
+            const endDate = format(endOfMonth(baseDate), 'yyyy-MM-dd')
+            const res = await api.dashboard.profitability(selectedCompany.id, startDate, endDate)
             const data = Array.isArray(res.data) ? res.data : (res.data.data || [])
             
             if (data && data.length > 0) {

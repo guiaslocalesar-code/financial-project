@@ -24,9 +24,14 @@ from fastapi import HTTPException
 import traceback
 
 @router.get("/commissions-summary")
-async def get_commissions_summary(company_id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_commissions_summary(
+    company_id: UUID, 
+    start_date: date = Query(default_factory=lambda: date.today().replace(day=1)),
+    end_date: date = Query(default_factory=lambda: date.today().replace(day=calendar.monthrange(date.today().year, date.today().month)[1])),
+    db: AsyncSession = Depends(get_db)
+):
     try:
-        summary = await dashboard_service.get_commissions_summary(company_id, db)
+        summary = await dashboard_service.get_commissions_summary(company_id, start_date, end_date, db)
         return summary
     except Exception as e:
         # Log full traceback to Cloud Run logs
@@ -41,8 +46,13 @@ async def get_commissions_summary(company_id: UUID, db: AsyncSession = Depends(g
         }
 
 @router.get("/profitability")
-async def get_profitability(company_id: UUID, db: AsyncSession = Depends(get_db)):
-    profitability = await dashboard_service.get_profitability(company_id, db)
+async def get_profitability(
+    company_id: UUID, 
+    start_date: date = Query(default_factory=lambda: date.today().replace(day=1)),
+    end_date: date = Query(default_factory=lambda: date.today().replace(day=calendar.monthrange(date.today().year, date.today().month)[1])),
+    db: AsyncSession = Depends(get_db)
+):
+    profitability = await dashboard_service.get_profitability(company_id, start_date, end_date, db)
     return profitability
 
 @router.get("/all")
@@ -53,7 +63,7 @@ async def get_full_dashboard(
     db: AsyncSession = Depends(get_db)
 ):
     summary = await dashboard_service.get_summary(company_id, start_date, end_date, db)
-    profitability = await dashboard_service.get_profitability(company_id, db)
+    profitability = await dashboard_service.get_profitability(company_id, start_date, end_date, db)
     # Could add rankings and budget-vs-real here too
     return {
         "summary": summary,

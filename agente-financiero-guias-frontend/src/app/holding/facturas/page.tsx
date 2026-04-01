@@ -13,7 +13,9 @@ import {
     ArrowPathRoundedSquareIcon,
     SparklesIcon,
     EyeIcon,
-    PencilSquareIcon
+    PencilSquareIcon,
+    CalendarDaysIcon,
+    ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
 import { clsx } from 'clsx'
 import { api } from '@/services/api'
@@ -21,6 +23,8 @@ import type { Invoice, Client, ClientService } from '@/types'
 import { useHoldingContext } from '@/context/HoldingContext'
 import { generateInvoiceBatch } from '@/services/invoices'
 import Link from 'next/link'
+import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns'
+import { exportToCSV, exportToXML } from '@/utils/export'
 
 const getOverdueDays = (dueDateStr: string, status: string): number => {
     if (status !== 'EMITTED') return 0
@@ -52,11 +56,17 @@ const getOverdueStatus = (days: number, status: string) => {
 export default function FacturasPage() {
     const queryClient = useQueryClient()
     const { selectedCompany } = useHoldingContext()
+    const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
+    const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'))
+    const [showExportMenu, setShowExportMenu] = useState(false)
 
-    // Period for recurring invoices
+    // Used for recurring invoices batch generation (current month focus)
     const now = new Date()
     const currentMonth = now.getMonth() + 1
     const currentYear = now.getFullYear()
+
+    const rangeStart = parseISO(startDate)
+    const rangeEnd = parseISO(endDate)
 
     const { data: clients } = useQuery({
         queryKey: ['clients', selectedCompany?.id],
@@ -144,12 +154,49 @@ export default function FacturasPage() {
     const enrichedInvoices = useMemo(() => {
         if (!invoices || !clients) return []
         const clientMap = new Map((clients || []).map(c => [c.id, c.name]))
-        return invoices.map(inv => ({
-            ...inv,
-            client_name: clientMap.get(inv.client_id) || 'Cliente Desconocido',
-            overdue_days: getOverdueDays(inv.due_date || inv.issue_date, inv.status)
+        return invoices
+            .filter(inv => {
+                const invDate = new Date(inv.issue_date)
+                return isWithinInterval(invDate, { start: rangeStart, end: rangeEnd })
+            })
+            .map(inv => ({
+                ...inv,
+                client_name: clientMap.get(inv.client_id) || 'Cliente Desconocido',
+                overdue_days: getOverdueDays(inv.due_date || inv.issue_date, inv.status)
+            }))
+    }, [invoices, clients, rangeStart, rangeEnd])
+
+    const handleExport = (fmt: 'csv' | 'xml') => {
+        const columnMap = {
+            invoice_number: 'Nº Comprobante',
+            client_name: 'Cliente',
+            issue_date: 'Fecha Emisión',
+            due_date: 'Vencimiento',
+            total: 'Total',
+            status: 'Estado',
+            cae: 'CAE'
+        }
+        const rows = enrichedInvoices.map(inv => ({
+            invoice_number: inv.invoice_number || 'Borrador',
+            client_name: inv.client_name,
+            issue_date: format(new Date(inv.issue_date), 'dd/MM/yyyy'),
+            due_date: inv.due_date ? format(new Date(inv.due_date), 'dd/MM/yyyy') : '—',
+            total: Number(inv.total),
+            status: inv.status,
+            cae: inv.cae || '—'
         }))
-    }, [invoices, clients])
+        const filename = `Facturas_${startDate}_${endDate}`
+        if (fmt === 'csv') exportToCSV(rows, filename, columnMap)
+        else exportToXML(rows, filename, 'Facturas', 'Factura', columnMap)
+        setShowExportMenu(false)
+    }
+
+    const setMonthRange = (offset: number) => {
+        const d = new Date()
+        d.setMonth(d.getMonth() + offset)
+        setStartDate(format(startOfMonth(d), 'yyyy-MM-dd'))
+        setEndDate(format(endOfMonth(d), 'yyyy-MM-dd'))
+    }
 
     if (!selectedCompany) {
         return (
@@ -174,14 +221,43 @@ export default function FacturasPage() {
                         Gestión de comprobantes y contratos recurrentes de <span className="font-semibold">{selectedCompany.name}</span>.
                     </p>
                 </div>
-                <div className="flex gap-3">
-                    <Link
-                        href="/holding/facturas/editor"
-                        className="btn-primary"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        Nueva Factura
-                    </Link>
+                <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm order-2 sm:order-1">
+                        <CalendarDaysIcon className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs font-bold text-gray-400 uppercase">Desde</span>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="text-sm font-semibold text-gray-700 outline-none bg-transparent cursor-pointer" />
+                        <span className="text-gray-300">|</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase">Hasta</span>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm font-semibold text-gray-700 outline-none bg-transparent cursor-pointer" />
+                    </div>
+                    
+                    <div className="flex items-center gap-2 order-3 sm:order-2">
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowExportMenu(!showExportMenu)}
+                                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                <ArrowDownTrayIcon className="w-4 h-4" />
+                                Exportar
+                            </button>
+                            {showExportMenu && (
+                                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden min-w-[140px]">
+                                    <button onClick={() => handleExport('csv')} className="block w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 font-medium transition-colors">
+                                        📊 CSV
+                                    </button>
+                                    <button onClick={() => handleExport('xml')} className="block w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 font-medium transition-colors border-t border-gray-100">
+                                        📄 XML
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <Link
+                            href="/holding/facturas/editor"
+                            className="btn-primary"
+                        >
+                            <PlusIcon className="w-5 h-5" />
+                            Nueva
+                        </Link>
+                    </div>
                 </div>
             </div>
 

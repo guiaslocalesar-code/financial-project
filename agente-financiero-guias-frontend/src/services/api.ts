@@ -114,8 +114,8 @@ export const api = {
         summary: (companyId: string, startDate?: string, endDate?: string) => financeClient.get('/dashboard/summary', { 
             params: { company_id: companyId, start_date: startDate, end_date: endDate } 
         }),
-        profitability: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/profitability', { 
-            params: { company_id: companyId, month, year } 
+        profitability: (companyId: string, startDate?: string, endDate?: string) => financeClient.get('/dashboard/profitability', { 
+            params: { company_id: companyId, start_date: startDate, end_date: endDate } 
         }),
     },
 
@@ -169,7 +169,8 @@ export const api = {
     },
     commissions: {
         // Summary & Stats
-        getSummary: (companyId: string) => financeClient.get('/dashboard/commissions-summary', { params: { company_id: companyId } }),
+        getSummary: (companyId: string, startDate?: string, endDate?: string) => 
+            financeClient.get('/dashboard/commissions-summary', { params: { company_id: companyId, start_date: startDate, end_date: endDate } }),
         getRecipientSummary: (recipientId: string) => financeClient.get(`/commissions/recipient/${recipientId}/summary`),
 
         // Comisiones
