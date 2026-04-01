@@ -7,6 +7,7 @@
  */
 
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
+import { PayCommissionPayload } from '@/types/commissions'
 
 // In browser use relative paths (Next.js proxy handles routing)
 const API_BASE_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_AUTH_API_URL || '')
@@ -167,17 +168,29 @@ export const api = {
         createInstallment: (debtId: string, data: any) => financeClient.post(`/debts/${debtId}/installments`, data),
     },
     commissions: {
-        list: (companyId: string, recipientId?: string) => 
-            financeClient.get('/commissions', { params: { company_id: companyId, recipient_id: recipientId } }),
-        listRecipients: (companyId: string) => financeClient.get('/commissions/recipients', { params: { company_id: companyId } }),
-        listRules: (companyId: string) => financeClient.get('/commissions/rules', { params: { company_id: companyId } }),
-        createRecipient: (data: any) => financeClient.post('/commissions/recipients', data),
-        updateRecipient: (id: string, data: any) => financeClient.patch(`/commissions/recipients/${id}`, data),
-        deleteRecipient: (id: string) => financeClient.delete(`/commissions/recipients/${id}`),
-        createRule: (data: any) => financeClient.post('/commissions/rules', data),
-        updateRule: (id: string, data: any) => financeClient.patch(`/commissions/rules/${id}`, data),
-        deleteRule: (id: string) => financeClient.delete(`/commissions/rules/${id}`),
-        updateStatus: (id: string, status: string) => financeClient.patch(`/commissions/${id}/status`, { status }),
+        // Summary & Stats
+        getSummary: (companyId: string) => financeClient.get('/dashboard/commissions-summary', { params: { company_id: companyId } }),
+        getRecipientSummary: (recipientId: string) => financeClient.get(`/commissions/recipient/${recipientId}/summary`),
+
+        // Comisiones
+        list: (params: { company_id: string; status?: string; recipient_id?: string }) => 
+            financeClient.get('/commissions', { params }),
+        pay: (commissionId: string, data: PayCommissionPayload) => 
+            financeClient.post(`/commissions/${commissionId}/pay`, data),
+        generate: (companyId: string) => 
+            financeClient.post('/commissions/generate', null, { params: { company_id: companyId } }),
+
+        // CRUD Destinatarios
+        listRecipients: (companyId: string) => financeClient.get('/commission-recipients', { params: { company_id: companyId } }),
+        createRecipient: (data: any) => financeClient.post('/commission-recipients', data),
+        updateRecipient: (id: string, data: any) => financeClient.patch(`/commission-recipients/${id}`, data),
+        deleteRecipient: (id: string) => financeClient.delete(`/commission-recipients/${id}`),
+
+        // CRUD Reglas
+        listRules: (companyId: string) => financeClient.get('/commission-rules', { params: { company_id: companyId } }),
+        createRule: (data: any) => financeClient.post('/commission-rules', data),
+        updateRule: (id: string, data: any) => financeClient.patch(`/commission-rules/${id}`, data),
+        deleteRule: (id: string) => financeClient.delete(`/commission-rules/${id}`),
     },
 
     // ── Finance: User Roles & Permissions ─────────────────────────────────
