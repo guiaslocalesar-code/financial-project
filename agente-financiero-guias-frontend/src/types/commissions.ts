@@ -36,34 +36,45 @@ export interface CommissionRule {
 
 export interface Commission {
     id: string;
-    company_id: string;
+    // Backend fields
+    transaction_id?: string;
     recipient_id: string;
-    recipient_name: string;
-    client_id: string;
-    client_name: string;
-    service_id: string;
-    service_name: string;
-    base_amount: number;
-    commission_amount: number;
-    status: CommissionStatus;
+    amount?: number;             // from backend 'commission_amount' column
+    status: string;              // PENDING | PAID (uppercase from backend)
     created_at: string;
+    updated_at?: string;
+    // Enriched fields (joined by backend)
+    recipient_name?: string;
+    client_name?: string;
+    client_logo?: string;
+    service_name?: string;
+    transaction_description?: string;
+    transaction_date?: string;
+    // Legacy/frontend-only fields
+    company_id?: string;
+    base_amount?: number;
+    commission_amount?: number;
     payment_date?: string;
-    payment_method?: PaymentMethodType;
+    payment_method?: string;
     actual_amount?: number;
     payment_method_id?: string;
 }
 
 export interface TopRecipient {
-    recipient_id: string;
+    id: string;
     name: string;
-    total_amount: number;
-    count: number;
+    total_earned: number;
 }
 
 export interface CommissionDashboardSummary {
-    total_pendiente: number;
-    total_pagado: number;
+    // Backend returns English field names
+    total_pending: number;
+    total_paid: number;
+    recipient_count: number;
     top_recipients: TopRecipient[];
+    // Legacy aliases (in case old API still used)
+    total_pendiente?: number;
+    total_pagado?: number;
 }
 
 export interface RecipientSummary extends CommissionRecipient {

@@ -64,38 +64,42 @@ export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: P
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {commissions.map((comm) => {
-                        const percentage = comm.base_amount > 0 
-                            ? (comm.commission_amount / comm.base_amount) * 100 
+                        // Backend returns 'amount' for commission_amount, base_amount may not exist
+                        const commissionAmount = comm.commission_amount ?? comm.amount ?? 0
+                        const baseAmount = comm.base_amount ?? 0
+                        const percentage = baseAmount > 0 
+                            ? (commissionAmount / baseAmount) * 100 
                             : 0;
+                        const displayDate = comm.transaction_date || comm.created_at
 
                         return (
                             <tr key={comm.id} className="hover:bg-gray-50/50 transition-colors group">
                                 <td className="py-4">
                                     <div className="flex flex-col">
                                         <span className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-                                            {comm.recipient_name}
+                                            {comm.recipient_name || '—'}
                                         </span>
                                         <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">ID: {comm.id.slice(0, 8)}</span>
                                     </div>
                                 </td>
                                 <td>
                                     <div className="flex flex-col text-sm">
-                                        <span className="text-gray-700 font-medium">{comm.client_name}</span>
-                                        <span className="text-gray-400 text-xs italic">{comm.service_name}</span>
+                                        <span className="text-gray-700 font-medium">{comm.client_name || comm.transaction_description || '—'}</span>
+                                        <span className="text-gray-400 text-xs italic">{comm.service_name || ''}</span>
                                     </div>
                                 </td>
                                 <td className="text-right font-mono text-gray-600">
-                                    ${comm.base_amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                    ${baseAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td className="text-right font-medium text-blue-600">
                                     {percentage.toFixed(1)}%
                                 </td>
                                 <td className="text-right font-bold text-gray-900 whitespace-nowrap">
-                                    ${comm.commission_amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                    ${commissionAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td>
                                     <div className="flex flex-col text-xs text-gray-500">
-                                        <span>{new Date(comm.created_at).toLocaleDateString('es-AR')}</span>
+                                        <span>{displayDate ? new Date(displayDate).toLocaleDateString('es-AR') : '—'}</span>
                                         {comm.payment_date && (
                                             <span className="text-emerald-600 font-medium">Pago: {new Date(comm.payment_date).toLocaleDateString('es-AR')}</span>
                                         )}
@@ -104,18 +108,18 @@ export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: P
                                 <td>
                                     <span className={clsx(
                                         "badge inline-flex items-center gap-1.5",
-                                        comm.status === 'pending' ? "badge-warning" : "badge-success"
+                                        comm.status?.toUpperCase() === 'PENDING' ? "badge-warning" : "badge-success"
                                     )}>
-                                        {comm.status === 'pending' ? (
+                                        {comm.status?.toUpperCase() === 'PENDING' ? (
                                             <ClockIcon className="w-3 h-3" />
                                         ) : (
                                             <CheckCircleIcon className="w-3 h-3" />
                                         )}
-                                        {comm.status === 'pending' ? 'Pendiente' : 'Pagada'}
+                                        {comm.status?.toUpperCase() === 'PENDING' ? 'Pendiente' : 'Pagada'}
                                     </span>
                                 </td>
                                 <td className="text-right pr-6">
-                                    {!isHistory && onPay && comm.status === 'pending' && (
+                                    {!isHistory && onPay && comm.status?.toUpperCase() === 'PENDING' && (
                                         <button
                                             onClick={() => onPay(comm)}
                                             className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-all shadow-sm active:scale-95"

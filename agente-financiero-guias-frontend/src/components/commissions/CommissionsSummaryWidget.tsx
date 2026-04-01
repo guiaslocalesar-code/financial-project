@@ -18,7 +18,9 @@ export function CommissionsSummaryWidget({ summary, isLoading }: Props) {
     const stats = [
         {
             name: 'Total Pendiente',
-            value: summary?.total_pendiente ? `$${summary.total_pendiente.toLocaleString('es-AR')}` : '$0',
+            value: summary?.total_pending != null 
+                ? `$${summary.total_pending.toLocaleString('es-AR')}` 
+                : (summary?.total_pendiente != null ? `$${summary.total_pendiente.toLocaleString('es-AR')}` : '$0'),
             icon: ClockIcon,
             color: 'text-amber-600',
             bgColor: 'bg-amber-50',
@@ -27,7 +29,9 @@ export function CommissionsSummaryWidget({ summary, isLoading }: Props) {
         },
         {
             name: 'Total Pagado',
-            value: summary?.total_pagado ? `$${summary.total_pagado.toLocaleString('es-AR')}` : '$0',
+            value: summary?.total_paid != null 
+                ? `$${summary.total_paid.toLocaleString('es-AR')}` 
+                : (summary?.total_pagado != null ? `$${summary.total_pagado.toLocaleString('es-AR')}` : '$0'),
             icon: CheckBadgeIcon,
             color: 'text-emerald-600',
             bgColor: 'bg-emerald-50',
@@ -36,7 +40,7 @@ export function CommissionsSummaryWidget({ summary, isLoading }: Props) {
         },
         {
             name: 'Cobradores Activos',
-            value: summary?.top_recipients?.length || 0,
+            value: summary?.recipient_count ?? summary?.top_recipients?.length ?? 0,
             icon: UserGroupIcon,
             color: 'text-blue-600',
             bgColor: 'bg-blue-50',
