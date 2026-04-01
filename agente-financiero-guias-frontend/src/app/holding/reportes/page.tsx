@@ -15,6 +15,7 @@ import { Fragment } from 'react'
 import { clsx } from 'clsx'
 import { api } from '@/services/api'
 import { useHoldingContext } from '@/context/HoldingContext'
+import { format, startOfMonth, endOfMonth } from 'date-fns'
 
 const MONTHS = [
     { id: 1, name: 'Enero' }, { id: 2, name: 'Febrero' }, { id: 3, name: 'Marzo' },
@@ -40,7 +41,10 @@ export default function ReportesPage() {
         queryKey: ['dashboard-summary', selectedCompany?.id, month, year],
         queryFn: async () => {
             if (!selectedCompany) return null
-            const res = await api.dashboard.summary(selectedCompany.id, month, year)
+            const baseDate = new Date(year, month - 1, 1)
+            const startDate = format(startOfMonth(baseDate), 'yyyy-MM-dd')
+            const endDate = format(endOfMonth(baseDate), 'yyyy-MM-dd')
+            const res = await api.dashboard.summary(selectedCompany.id, startDate, endDate)
             const data = res.data
             
             if (data) {
