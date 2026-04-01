@@ -176,7 +176,7 @@ export default function CobranzasPage() {
             </div>
 
             {/* Table */}
-            <div className="glass-card overflow-hidden">
+            <div className="glass-card relative">
                 <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                     <h3 className="font-bold text-gray-900">Cobros Registrados</h3>
                     <div className="flex items-center gap-3">
