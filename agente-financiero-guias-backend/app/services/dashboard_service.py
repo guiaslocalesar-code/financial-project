@@ -127,7 +127,7 @@ class DashboardService:
         from app.utils.enums import CommissionStatus
 
         # Sum pending
-        pending_query = select(func.sum(Commission.amount)).join(
+        pending_query = select(func.sum(Commission.amount)).select_from(Commission).join(
             CommissionRecipient, Commission.recipient_id == CommissionRecipient.id
         ).where(
             CommissionRecipient.company_id == company_id,
@@ -137,7 +137,7 @@ class DashboardService:
         total_pending = float(pending_res.scalar() or 0.0)
 
         # Sum paid
-        paid_query = select(func.sum(Commission.amount)).join(
+        paid_query = select(func.sum(Commission.amount)).select_from(Commission).join(
             CommissionRecipient, Commission.recipient_id == CommissionRecipient.id
         ).where(
             CommissionRecipient.company_id == company_id,
@@ -147,7 +147,7 @@ class DashboardService:
         total_paid = float(paid_res.scalar() or 0.0)
 
         # Count active recipients
-        recip_query = select(func.count(CommissionRecipient.id)).where(
+        recip_query = select(func.count(CommissionRecipient.id)).select_from(CommissionRecipient).where(
             CommissionRecipient.company_id == company_id,
             CommissionRecipient.is_active == True
         )
@@ -159,7 +159,7 @@ class DashboardService:
             CommissionRecipient.id,
             CommissionRecipient.name,
             func.sum(Commission.amount).label('total_earned')
-        ).join(
+        ).select_from(CommissionRecipient).join(
             Commission, Commission.recipient_id == CommissionRecipient.id
         ).where(
             CommissionRecipient.company_id == company_id
