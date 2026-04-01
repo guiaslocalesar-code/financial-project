@@ -181,16 +181,16 @@ export const api = {
             financeClient.post('/commissions/generate', null, { params: { company_id: companyId } }),
 
         // CRUD Destinatarios
-        listRecipients: (companyId: string) => financeClient.get('/commission-recipients', { params: { company_id: companyId } }),
-        createRecipient: (data: any) => financeClient.post('/commission-recipients', data),
-        updateRecipient: (id: string, data: any) => financeClient.patch(`/commission-recipients/${id}`, data),
-        deleteRecipient: (id: string) => financeClient.delete(`/commission-recipients/${id}`),
+        listRecipients: (companyId: string) => financeClient.get('/commissions/recipients', { params: { company_id: companyId } }),
+        createRecipient: (data: any) => financeClient.post('/commissions/recipients', data),
+        updateRecipient: (id: string, data: any) => financeClient.patch(`/commissions/recipients/${id}`, data),
+        deleteRecipient: (id: string) => financeClient.delete(`/commissions/recipients/${id}`),
 
         // CRUD Reglas
-        listRules: (companyId: string) => financeClient.get('/commission-rules', { params: { company_id: companyId } }),
-        createRule: (data: any) => financeClient.post('/commission-rules', data),
-        updateRule: (id: string, data: any) => financeClient.patch(`/commission-rules/${id}`, data),
-        deleteRule: (id: string) => financeClient.delete(`/commission-rules/${id}`),
+        listRules: (companyId: string) => financeClient.get('/commissions/rules', { params: { company_id: companyId } }),
+        createRule: (data: any) => financeClient.post('/commissions/rules', data),
+        updateRule: (id: string, data: any) => financeClient.patch(`/commissions/rules/${id}`, data),
+        deleteRule: (id: string) => financeClient.delete(`/commissions/rules/${id}`),
     },
 
     // ── Finance: User Roles & Permissions ─────────────────────────────────

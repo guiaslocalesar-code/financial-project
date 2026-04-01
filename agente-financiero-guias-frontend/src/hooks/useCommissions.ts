@@ -3,7 +3,8 @@ import { api } from '@/services/api'
 import { 
     PayCommissionPayload, 
     CreateCommissionRecipient, 
-    CreateCommissionRule 
+    CreateCommissionRule,
+    Commission
 } from '@/types/commissions'
 
 export function useCommissions(companyId?: string) {
@@ -27,10 +28,13 @@ export function useCommissions(companyId?: string) {
             if (!companyId) return []
             const res = await api.commissions.list({ 
                 company_id: companyId, 
-                status, 
-                recipient_id: recipientId 
+                recipient_id: recipientId ? recipientId : undefined
             })
-            return res.data
+            const allCommissions = res.data;
+            if (status) {
+                return allCommissions.filter((c: Commission) => c.status === status)
+            }
+            return allCommissions
         },
         enabled: !!companyId,
     })
