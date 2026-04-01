@@ -108,11 +108,11 @@ export const api = {
 
     // ── Finance: Dashboard ──────────────────────────────────────────────────
     dashboard: {
-        all: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/all', {
-            params: { company_id: companyId, month, year }
+        all: (companyId: string, startDate?: string, endDate?: string) => financeClient.get('/dashboard/all', {
+            params: { company_id: companyId, start_date: startDate, end_date: endDate }
         }),
-        summary: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/summary', { 
-            params: { company_id: companyId, month, year } 
+        summary: (companyId: string, startDate?: string, endDate?: string) => financeClient.get('/dashboard/summary', { 
+            params: { company_id: companyId, start_date: startDate, end_date: endDate } 
         }),
         profitability: (companyId: string, month?: number, year?: number) => financeClient.get('/dashboard/profitability', { 
             params: { company_id: companyId, month, year } 

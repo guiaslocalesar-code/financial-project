@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useHoldingContext } from '@/context/HoldingContext'
 import { api } from '@/services/api'
 import {
@@ -51,6 +51,8 @@ const getOverdueStatus = (days: number, status: string) => {
 
 export default function HoldingDashboard() {
     const { selectedCompany } = useHoldingContext()
+    const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
+    const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'))
 
     // 1. Fetch ALL transactions — the source of truth for KPIs & charts
     const { data: transactions, isLoading: isLoadingTx } = useQuery({
@@ -90,10 +92,10 @@ export default function HoldingDashboard() {
 
     // 4. Fetch dashboard summary (KPIs)
     const { data: summary, isLoading: isLoadingSummary } = useQuery({
-        queryKey: ['dashboard-summary', selectedCompany?.id],
+        queryKey: ['dashboard-summary', selectedCompany?.id, startDate, endDate],
         queryFn: async () => {
             if (!selectedCompany) return null
-            const res = await api.dashboard.summary(selectedCompany.id)
+            const res = await api.dashboard.summary(selectedCompany.id, startDate, endDate)
             return res.data
         },
         enabled: !!selectedCompany,
@@ -182,13 +184,25 @@ export default function HoldingDashboard() {
     return (
         <div className="space-y-8 animate-fade-in-up">
             {/* Page Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard Financiero</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    {selectedCompany ? (
-                        <>Resumen de <span className="font-semibold text-gray-700">{selectedCompany.name}</span></>
-                    ) : 'Seleccioná una empresa para ver su resumen.'}
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard Financiero</h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        {selectedCompany ? (
+                            <>Resumen de <span className="font-semibold text-gray-700">{selectedCompany.name}</span></>
+                        ) : 'Seleccioná una empresa para ver su resumen.'}
+                    </p>
+                </div>
+                {/* Date Filter */}
+                {selectedCompany && (
+                    <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
+                        <span className="text-xs font-bold text-gray-400 tracking-wider uppercase">Desde</span>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="text-sm font-semibold text-gray-700 outline-none bg-transparent cursor-pointer" />
+                        <span className="text-gray-300 mx-1">|</span>
+                        <span className="text-xs font-bold text-gray-400 tracking-wider uppercase">Hasta</span>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="text-sm font-semibold text-gray-700 outline-none bg-transparent cursor-pointer" />
+                    </div>
+                )}
             </div>
 
             {/* KPI Cards */}

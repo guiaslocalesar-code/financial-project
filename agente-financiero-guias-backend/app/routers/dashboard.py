@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
+import calendar
 from app.database import get_db
 from app.services.dashboard_service import dashboard_service
 from app.schemas.dashboard import DashboardData
@@ -11,11 +12,11 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 @router.get("/summary")
 async def get_summary(
     company_id: UUID,
-    month: int = Query(datetime.now().month, ge=1, le=12),
-    year: int = Query(datetime.now().year),
+    start_date: date = Query(default_factory=lambda: date.today().replace(day=1)),
+    end_date: date = Query(default_factory=lambda: date.today().replace(day=calendar.monthrange(date.today().year, date.today().month)[1])),
     db: AsyncSession = Depends(get_db)
 ):
-    summary = await dashboard_service.get_summary(company_id, month, year, db)
+    summary = await dashboard_service.get_summary(company_id, start_date, end_date, db)
     return summary
 
 from app.schemas.commission import CommissionsSummary
@@ -47,11 +48,11 @@ async def get_profitability(company_id: UUID, db: AsyncSession = Depends(get_db)
 @router.get("/all")
 async def get_full_dashboard(
     company_id: UUID,
-    month: int = Query(datetime.now().month, ge=1, le=12),
-    year: int = Query(datetime.now().year),
+    start_date: date = Query(default_factory=lambda: date.today().replace(day=1)),
+    end_date: date = Query(default_factory=lambda: date.today().replace(day=calendar.monthrange(date.today().year, date.today().month)[1])),
     db: AsyncSession = Depends(get_db)
 ):
-    summary = await dashboard_service.get_summary(company_id, month, year, db)
+    summary = await dashboard_service.get_summary(company_id, start_date, end_date, db)
     profitability = await dashboard_service.get_profitability(company_id, db)
     # Could add rankings and budget-vs-real here too
     return {

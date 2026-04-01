@@ -1,3 +1,4 @@
+from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from uuid import UUID
@@ -8,7 +9,7 @@ from app.models.service import Service
 from app.utils.enums import TransactionType, BudgetStatus
 
 class DashboardService:
-    async def get_summary(self, company_id: UUID, month: int, year: int, db: AsyncSession):
+    async def get_summary(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
         total_income = 0.0
         total_expenses = 0.0
         total_commissions = 0.0
@@ -21,8 +22,8 @@ class DashboardService:
                 .where(
                     Transaction.company_id == company_id,
                     Transaction.type == TransactionType.INCOME,
-                    func.extract('month', Transaction.transaction_date) == month,
-                    func.extract('year', Transaction.transaction_date) == year
+                    Transaction.transaction_date >= start_date,
+                    Transaction.transaction_date <= end_date
                 )
             )
             total_income = float(income_res.scalar() or 0.0)
@@ -36,8 +37,8 @@ class DashboardService:
                 .where(
                     Transaction.company_id == company_id,
                     Transaction.type == TransactionType.EXPENSE,
-                    func.extract('month', Transaction.transaction_date) == month,
-                    func.extract('year', Transaction.transaction_date) == year
+                    Transaction.transaction_date >= start_date,
+                    Transaction.transaction_date <= end_date
                 )
             )
             total_expenses = float(expense_res.scalar() or 0.0)
@@ -56,8 +57,8 @@ class DashboardService:
                 .where(
                     CommissionRecipient.company_id == company_id,
                     Commission.status == CommissionStatus.PAID,
-                    func.extract('month', Commission.updated_at) == month,
-                    func.extract('year', Commission.updated_at) == year
+                    func.cast(Commission.updated_at, date) >= start_date,
+                    func.cast(Commission.updated_at, date) <= end_date
                 )
             )
             total_commissions = float(comm_res.scalar() or 0.0)
@@ -73,8 +74,8 @@ class DashboardService:
                 .where(
                     ExpenseBudget.company_id == company_id,
                     ExpenseBudget.status == BudgetStatus.PENDING,
-                    ExpenseBudget.period_month == month,
-                    ExpenseBudget.period_year == year
+                    ExpenseBudget.period_year * 12 + ExpenseBudget.period_month >= start_date.year * 12 + start_date.month,
+                    ExpenseBudget.period_year * 12 + ExpenseBudget.period_month <= end_date.year * 12 + end_date.month
                 )
             )
             pending_to_pay = float(pending_res.scalar() or 0.0)
