@@ -163,7 +163,7 @@ async def test_regla_duplicada_devuelve_400():
 async def test_listar_comisiones_pendientes():
     """GET /commissions/pending devuelve 200 y estructura correcta."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        res = await ac.get(f"/api/v1/commissions/pending?company_id={COMPANY_ID}")
+        res = await ac.get(f"/api/v1/commissions?status=pending&company_id={COMPANY_ID}")
         assert res.status_code == 200
         data = res.json()
         assert isinstance(data, list)
@@ -184,7 +184,7 @@ async def test_listar_comisiones_pendientes():
 async def test_pagar_comision_crea_egreso():
     """POST /commissions/{id}/pay crea una transaction de tipo expense."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        pending_res = await ac.get(f"/api/v1/commissions/pending?company_id={COMPANY_ID}")
+        pending_res = await ac.get(f"/api/v1/commissions?status=pending&company_id={COMPANY_ID}")
         assert pending_res.status_code == 200
         pending = pending_res.json()
 
@@ -214,7 +214,7 @@ async def test_pagar_comision_crea_egreso():
 async def test_pago_doble_devuelve_400():
     """POST /commissions/{id}/pay dos veces sobre la misma comisión → 400."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        pending_res = await ac.get(f"/api/v1/commissions/pending?company_id={COMPANY_ID}")
+        pending_res = await ac.get(f"/api/v1/commissions?status=pending&company_id={COMPANY_ID}")
         pending = pending_res.json()
 
         if not pending:

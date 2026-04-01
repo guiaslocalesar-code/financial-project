@@ -233,25 +233,28 @@ async def delete_rule(rule_id: UUID, db: AsyncSession = Depends(get_db)):
 
 # ── Commissions Management ─────────────────────────────────────────────────────
 
-@router.get("/commissions/pending", response_model=List[CommissionResponse])
-async def get_pending_commissions(
+@router.get("/commissions", response_model=List[CommissionResponse])
+async def list_commissions(
     company_id: UUID,
+    status: Optional[CommissionStatus] = Query(None),
     recipient_id: Optional[UUID] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Lista todas las comisiones pendientes de una empresa.
-    Opcionalmente filtra por recipient_id.
+    Lista las comisiones de una empresa.
+    Opcionalmente filtra por status (ej: pending, paid) y/o recipient_id.
     Incluye nombre de destinatario, cliente y servicio (sin N+1).
     """
-    q = select(Commission).where(
-        Commission.company_id == company_id,
-        Commission.status == CommissionStatus.PENDING,
-    )
+    q = select(Commission).where(Commission.company_id == company_id)
+    
+    if status:
+        q = q.where(Commission.status == status)
+
     if recipient_id:
         q = q.where(Commission.recipient_id == recipient_id)
 
     q = q.order_by(Commission.created_at.desc())
+
     result = await db.execute(q)
     commissions = result.scalars().all()
 
