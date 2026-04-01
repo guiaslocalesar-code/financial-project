@@ -72,6 +72,30 @@ class CommissionResponse(CommissionBase):
     transaction_description: str | None = None
     transaction_date: date | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+class CommissionPay(BaseModel):
+    payment_method: str
+    payment_method_id: str | UUID | None = None
+    payment_date: date | None = None
+    actual_amount: float | None = None
+
+class RecipientStats(BaseModel):
+    total_earned: float = 0
+    total_pending: float = 0
+    performance_pct: float = 0
+
+class RecipientSummary(CommissionRecipientResponse):
+    stats: RecipientStats
+    commissions: list[CommissionResponse] = []
+
+class TopRecipient(BaseModel):
+    id: str | UUID
+    name: str
+    total_earned: float
+
+class CommissionsSummary(BaseModel):
+    total_pending: float
+    total_paid: float
+    recipient_count: int
+    top_recipients: list[TopRecipient] = []
 
 

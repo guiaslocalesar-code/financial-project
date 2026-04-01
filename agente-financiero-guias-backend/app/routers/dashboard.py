@@ -18,6 +18,13 @@ async def get_summary(
     summary = await dashboard_service.get_summary(company_id, month, year, db)
     return summary
 
+from app.schemas.commission import CommissionsSummary
+
+@router.get("/commissions-summary", response_model=CommissionsSummary)
+async def get_commissions_summary(company_id: UUID, db: AsyncSession = Depends(get_db)):
+    summary = await dashboard_service.get_commissions_summary(company_id, db)
+    return summary
+
 @router.get("/profitability")
 async def get_profitability(company_id: UUID, db: AsyncSession = Depends(get_db)):
     profitability = await dashboard_service.get_profitability(company_id, db)

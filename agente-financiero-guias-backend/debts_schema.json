@@ -1,0 +1,114 @@
+{
+  "debts": [
+    {
+      "name": "id",
+      "type": "uuid"
+    },
+    {
+      "name": "company_id",
+      "type": "uuid"
+    },
+    {
+      "name": "transaction_id",
+      "type": "uuid"
+    },
+    {
+      "name": "payment_method_id",
+      "type": "character varying"
+    },
+    {
+      "name": "description",
+      "type": "text"
+    },
+    {
+      "name": "original_amount",
+      "type": "numeric"
+    },
+    {
+      "name": "interest_type",
+      "type": "character varying"
+    },
+    {
+      "name": "interest_rate",
+      "type": "numeric"
+    },
+    {
+      "name": "interest_total",
+      "type": "numeric"
+    },
+    {
+      "name": "total_amount",
+      "type": "numeric"
+    },
+    {
+      "name": "installments",
+      "type": "integer"
+    },
+    {
+      "name": "installment_amount",
+      "type": "numeric"
+    },
+    {
+      "name": "first_due_date",
+      "type": "date"
+    },
+    {
+      "name": "status",
+      "type": "character varying"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone"
+    }
+  ],
+  "debt_installments": [
+    {
+      "name": "id",
+      "type": "uuid"
+    },
+    {
+      "name": "debt_id",
+      "type": "uuid"
+    },
+    {
+      "name": "installment_number",
+      "type": "integer"
+    },
+    {
+      "name": "due_date",
+      "type": "date"
+    },
+    {
+      "name": "amount",
+      "type": "numeric"
+    },
+    {
+      "name": "capital_amount",
+      "type": "numeric"
+    },
+    {
+      "name": "interest_amount",
+      "type": "numeric"
+    },
+    {
+      "name": "status",
+      "type": "character varying"
+    },
+    {
+      "name": "transaction_id",
+      "type": "uuid"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone"
+    }
+  ]
+}

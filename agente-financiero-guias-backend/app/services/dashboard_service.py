@@ -122,4 +122,64 @@ class DashboardService:
         
         return profitability
 
+    async def get_commissions_summary(self, company_id: UUID, db: AsyncSession):
+        from app.models.commission import Commission, CommissionRecipient
+        from app.utils.enums import CommissionStatus
+
+        # Sum pending
+        pending_query = select(func.sum(Commission.amount)).join(
+            CommissionRecipient, Commission.recipient_id == CommissionRecipient.id
+        ).where(
+            CommissionRecipient.company_id == company_id,
+            Commission.status == CommissionStatus.PENDING
+        )
+        pending_res = await db.execute(pending_query)
+        total_pending = float(pending_res.scalar() or 0.0)
+
+        # Sum paid
+        paid_query = select(func.sum(Commission.amount)).join(
+            CommissionRecipient, Commission.recipient_id == CommissionRecipient.id
+        ).where(
+            CommissionRecipient.company_id == company_id,
+            Commission.status == CommissionStatus.PAID
+        )
+        paid_res = await db.execute(paid_query)
+        total_paid = float(paid_res.scalar() or 0.0)
+
+        # Count active recipients
+        recip_query = select(func.count(CommissionRecipient.id)).where(
+            CommissionRecipient.company_id == company_id,
+            CommissionRecipient.is_active == True
+        )
+        recip_res = await db.execute(recip_query)
+        recipient_count = int(recip_res.scalar() or 0)
+
+        # Top recipients by total earned (pending + paid)
+        top_query = select(
+            CommissionRecipient.id,
+            CommissionRecipient.name,
+            func.sum(Commission.amount).label('total_earned')
+        ).join(
+            Commission, Commission.recipient_id == CommissionRecipient.id
+        ).where(
+            CommissionRecipient.company_id == company_id
+        ).group_by(
+            CommissionRecipient.id, CommissionRecipient.name
+        ).order_by(
+            func.sum(Commission.amount).desc()
+        ).limit(5)
+        
+        top_res = await db.execute(top_query)
+        top_recipients = [
+            {"id": row.id, "name": row.name, "total_earned": float(row.total_earned)}
+            for row in top_res
+        ]
+
+        return {
+            "total_pending": total_pending,
+            "total_paid": total_paid,
+            "recipient_count": recipient_count,
+            "top_recipients": top_recipients
+        }
+
 dashboard_service = DashboardService()
