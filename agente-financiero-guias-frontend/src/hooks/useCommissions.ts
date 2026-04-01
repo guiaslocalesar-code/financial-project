@@ -32,7 +32,10 @@ export function useCommissions(companyId?: string) {
             })
             const allCommissions = res.data;
             if (status) {
-                return allCommissions.filter((c: Commission) => c.status === status)
+                // Backend returns status in UPPERCASE (PENDING, PAID)
+                return allCommissions.filter((c: Commission) => 
+                    c.status?.toUpperCase() === status.toUpperCase()
+                )
             }
             return allCommissions
         },
