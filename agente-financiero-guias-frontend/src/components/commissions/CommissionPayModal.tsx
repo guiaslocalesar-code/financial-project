@@ -68,7 +68,7 @@ export function CommissionPayModal({ isOpen, onClose, commission, companyId }: P
             reset({
                 payment_date: new Date().toISOString().split('T')[0],
                 payment_method: 'transfer',
-                actual_amount: commission.commission_amount
+                actual_amount: commission.commission_amount ?? commission.amount ?? 0
             })
             setServerError(null)
         }
@@ -144,11 +144,11 @@ export function CommissionPayModal({ isOpen, onClose, commission, companyId }: P
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Total a Cobrar</p>
-                                                    <p className="text-lg font-black text-blue-700">${commission.commission_amount.toLocaleString('es-AR')}</p>
+                                                    <p className="text-lg font-black text-blue-700">${(commission.commission_amount ?? commission.amount ?? 0).toLocaleString('es-AR')}</p>
                                                 </div>
                                                 <div className="col-span-2 pt-2 border-t border-gray-200 mt-1">
                                                     <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Contexto</p>
-                                                    <p className="text-xs text-gray-600">{commission.client_name} — <span className="italic">{commission.service_name}</span></p>
+                                                    <p className="text-xs text-gray-600">{commission.client_name || commission.transaction_description || '—'} — <span className="italic">{commission.service_name || ''}</span></p>
                                                 </div>
                                             </div>
                                         )}
