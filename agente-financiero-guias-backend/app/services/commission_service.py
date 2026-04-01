@@ -35,8 +35,7 @@ class CommissionService:
         rules_query = select(CommissionRule).join(
             CommissionRecipient, CommissionRule.recipient_id == CommissionRecipient.id
         ).where(
-            CommissionRecipient.company_id == company_id,
-            CommissionRecipient.is_active == True
+            CommissionRecipient.company_id == company_id
         )
         rules_result = await db.execute(rules_query)
         rules = rules_result.scalars().all()

@@ -148,8 +148,7 @@ class DashboardService:
 
         # Count active recipients
         recip_query = select(func.count(CommissionRecipient.id)).select_from(CommissionRecipient).where(
-            CommissionRecipient.company_id == company_id,
-            CommissionRecipient.is_active == True
+            CommissionRecipient.company_id == company_id
         )
         recip_res = await db.execute(recip_query)
         recipient_count = int(recip_res.scalar() or 0)
