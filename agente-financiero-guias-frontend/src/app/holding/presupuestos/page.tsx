@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { PlusIcon, ClipboardDocumentListIcon, EllipsisVerticalIcon, BanknotesIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { PlusIcon, ClipboardDocumentListIcon, EllipsisVerticalIcon, BanknotesIcon, ChevronLeftIcon, ChevronRightIcon, ArrowPathIcon, ArrowPathRoundedSquareIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition, Tab } from '@headlessui/react'
 import { Fragment } from 'react'
 import { clsx } from 'clsx'
@@ -25,6 +25,26 @@ export default function PresupuestosPage() {
     const [collectBudget, setCollectBudget] = useState<IncomeBudgetType | null>(null)
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+    const [toastMsg, setToastMsg] = useState<{title: string, type: 'success'|'info'|'error'} | null>(null)
+
+    const generateMutation = useMutation({
+        mutationFn: async () => {
+            if (!selectedCompany) return null;
+            const res = await api.incomeBudgets.generate(selectedCompany.id, selectedMonth, selectedYear);
+            return res.data;
+        },
+        onSuccess: (data: any) => {
+            if (data) {
+                setToastMsg({ title: data.message, type: data.budgets_created > 0 ? 'success' : 'info' });
+                setTimeout(() => setToastMsg(null), 5000);
+                queryClient.invalidateQueries({ queryKey: ['incomeBudgets'] });
+            }
+        },
+        onError: (err: any) => {
+            setToastMsg({ title: err.response?.data?.detail || err.message || 'Error generando presupuestos', type: 'error' });
+            setTimeout(() => setToastMsg(null), 5000);
+        }
+    })
 
     const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -212,6 +232,24 @@ export default function PresupuestosPage() {
                 <Tab.Panels className="mt-4">
                     {/* Panel 1: Ingresos */}
                     <Tab.Panel className="focus:outline-none">
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Ingresos Proyectados</h3>
+                                <p className="text-sm text-gray-500">Abonos mensuales para {MONTH_NAMES[selectedMonth - 1]} {selectedYear}</p>
+                            </div>
+                            <button
+                                onClick={() => generateMutation.mutate()}
+                                disabled={generateMutation.isPending}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-semibold shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50"
+                            >
+                                {generateMutation.isPending ? (
+                                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <ArrowPathRoundedSquareIcon className="w-5 h-5" />
+                                )}
+                                Generar Automáticamente
+                            </button>
+                        </div>
                         <div className="glass-card overflow-hidden">
                             {isLoadingIncomes ? (
                                 <div className="p-12 flex justify-center">
@@ -461,6 +499,17 @@ export default function PresupuestosPage() {
                 budget={collectBudget}
                 companyId={selectedCompany.id}
             />
+
+            {/* Custom Toast */}
+            {toastMsg && (
+                <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-xl shadow-lg border text-sm font-semibold animate-fade-in-up transition-all ${
+                    toastMsg.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                    toastMsg.type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                    'bg-blue-50 text-blue-800 border-blue-200'
+                }`}>
+                    {toastMsg.title}
+                </div>
+            )}
         </div>
     )
 }

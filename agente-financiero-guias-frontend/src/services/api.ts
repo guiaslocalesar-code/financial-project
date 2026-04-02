@@ -136,6 +136,8 @@ export const api = {
             payment_method_id?: string,
             transaction_date?: string
         }) => financeClient.post(`/income-budgets/${budgetId}/collect`, data),
+        generate: (companyId: string, month: number, year: number) => 
+            financeClient.post('/income-budgets/generate', { company_id: companyId, month, year }),
     },
 
     expenses: {
