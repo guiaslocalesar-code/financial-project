@@ -23,6 +23,10 @@ class IncomeBudgetUpdate(BaseModel):
     notes: str | None = None
 
 class IncomeBudgetCollect(BaseModel):
+    actual_amount_collected: float | None = None
+    payment_method_id: str | None = None
+    transaction_date: str | None = None
+    # Legacy field kept for backward compatibility
     actual_amount: float | None = None
     payment_method: str = "transfer"
 
