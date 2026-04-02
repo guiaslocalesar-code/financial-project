@@ -13,13 +13,16 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { IncomeBudgetModal } from '@/components/budgets/IncomeBudgetModal'
 import { ExpenseBudgetModal } from '@/components/budgets/ExpenseBudgetModal'
+import { CollectIncomeModal } from '@/components/budgets/CollectIncomeModal'
 import { useQueryClient } from '@tanstack/react-query'
+import type { IncomeBudget as IncomeBudgetType } from '@/types'
 
 export default function PresupuestosPage() {
     const { selectedCompany } = useHoldingContext()
     const queryClient = useQueryClient()
     const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false)
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
+    const [collectBudget, setCollectBudget] = useState<IncomeBudgetType | null>(null)
 
     const { data: clients } = useQuery({
         queryKey: ['clients', selectedCompany?.id],
@@ -109,13 +112,8 @@ export default function PresupuestosPage() {
         enabled: !!selectedCompany && !!expenseTypes && !!expenseCategories,
     })
 
-    const handleCollect = async (budgetId: string) => {
-        try {
-            await api.incomeBudgets.collect(budgetId)
-            queryClient.invalidateQueries({ queryKey: ['incomeBudgets'] })
-        } catch (err) {
-            console.error('Error collecting income:', err)
-        }
+    const handleCollect = (budget: IncomeBudgetType) => {
+        setCollectBudget(budget)
     }
 
     const handlePay = async (budgetId: string) => {
@@ -241,6 +239,11 @@ export default function PresupuestosPage() {
                                                         {income.is_recurring && (
                                                             <div className="text-[10px] text-blue-500 uppercase font-bold tracking-tight">Recurrente</div>
                                                         )}
+                                                        {income.requires_invoice ? (
+                                                            <div className="text-[10px] text-indigo-600 uppercase font-bold tracking-tight">🧾 En Blanco</div>
+                                                        ) : (
+                                                            <div className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Sin Factura</div>
+                                                        )}
                                                     </td>
                                                     <td className="text-sm text-gray-600">
                                                         {format(new Date(income.planned_date), "dd 'de' MMMM", { locale: es })}
@@ -277,7 +280,7 @@ export default function PresupuestosPage() {
                                                                             <Menu.Item>
                                                                                 {({ active }) => (
                                                                                     <button
-                                                                                        onClick={() => handleCollect(income.id)}
+                                                                                        onClick={() => handleCollect(income as IncomeBudgetType)}
                                                                                         className={clsx(
                                                                                             active ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700',
                                                                                             'group flex w-full items-center px-4 py-2 text-sm transition-colors'
@@ -428,6 +431,13 @@ export default function PresupuestosPage() {
             <ExpenseBudgetModal
                 isOpen={isExpenseModalOpen}
                 onClose={() => setIsExpenseModalOpen(false)}
+            />
+
+            <CollectIncomeModal
+                isOpen={!!collectBudget}
+                onClose={() => setCollectBudget(null)}
+                budget={collectBudget}
+                companyId={selectedCompany.id}
             />
         </div>
     )

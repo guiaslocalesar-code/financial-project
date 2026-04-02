@@ -48,6 +48,7 @@ export interface Client {
     zip_code?: string
     imagen?: string
     is_active: boolean
+    requires_invoice?: boolean
     created_at: string
 }
 
@@ -105,6 +106,9 @@ export interface Transaction {
     expense_origin?: string
     amount: number
     currency: string
+    requires_invoice?: boolean
+    iva_rate?: number
+    iva_amount?: number
     exchange_rate?: number
     payment_method?: string
     description?: string
@@ -159,6 +163,9 @@ export interface IncomeBudget {
     service_id: string;
     description: string;
     amount: number;
+    requires_invoice?: boolean;
+    iva_rate?: number;
+    iva_amount?: number;
     planned_date: string;
     period_month: number;
     period_year: number;

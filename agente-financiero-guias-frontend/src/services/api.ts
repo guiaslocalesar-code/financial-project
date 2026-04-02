@@ -131,7 +131,11 @@ export const api = {
         list: (companyId: string, params?: { month?: number; year?: number }) =>
             financeClient.get('/income-budgets', { params: { company_id: companyId, ...params } }),
         create: (data: any) => financeClient.post('/income-budgets', data),
-        collect: (budgetId: string) => financeClient.post(`/income-budgets/${budgetId}/collect`),
+        collect: (budgetId: string, data: {
+            actual_amount_collected: number,
+            payment_method_id?: string,
+            transaction_date?: string
+        }) => financeClient.post(`/income-budgets/${budgetId}/collect`, data),
     },
 
     expenses: {
