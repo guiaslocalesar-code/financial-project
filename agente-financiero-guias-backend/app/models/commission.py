@@ -42,8 +42,6 @@ class Commission(Base):
     transaction_id: Mapped[uuid.UUID] = mapped_column("income_transaction_id", ForeignKey("transactions.id"), nullable=False)
     recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
     amount: Mapped[float] = mapped_column("commission_amount", Numeric(12, 2), nullable=False)
-    base_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=True)  # Neto del ingreso
-    commission_percentage: Mapped[float] = mapped_column(Numeric(5, 2), nullable=True) # % aplicado
     status: Mapped[str] = mapped_column(String(50), default="PENDING")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

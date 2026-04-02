@@ -66,9 +66,9 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
             pass
 
     # Read fiscal data from the budget
-    requires_invoice = getattr(budget, 'requires_invoice', False) or False
-    iva_rate = float(getattr(budget, 'iva_rate', 0) or 0)
-    iva_amount = float(getattr(budget, 'iva_amount', 0) or 0)
+    requires_invoice = getattr(budget, 'requires_invoice', False)
+    iva_rate = float(getattr(budget, 'iva_rate', 0.0))
+    iva_amount = float(getattr(budget, 'iva_amount', 0.0))
 
     # --- STEP 1: Create INCOME Transaction ---
     transaction_kwargs = dict(
@@ -123,8 +123,6 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
                 transaction_id=transaction.id,
                 recipient_id=rule.recipient_id,
                 amount=comm_amount,
-                base_amount=commission_base,
-                commission_percentage=percentage,
                 status=CommissionStatus.PENDING
             )
             db.add(new_comm)
