@@ -39,14 +39,27 @@ class Commission(Base):
     __tablename__ = "commissions"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=True) # Optional in some schemas
     transaction_id: Mapped[uuid.UUID] = mapped_column("income_transaction_id", ForeignKey("transactions.id"), nullable=False)
+    commission_rule_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_rules.id"), nullable=True)
     recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
+    client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=True)
+    service_id: Mapped[str] = mapped_column(ForeignKey("services.id"), nullable=True)
+    
+    base_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=True)
     amount: Mapped[float] = mapped_column("commission_amount", Numeric(12, 2), nullable=False)
+    
     status: Mapped[str] = mapped_column(String(50), default="PENDING")
+    payment_transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id"), nullable=True)
+    
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
     # Relationships
-    transaction = relationship("Transaction")
+    transaction = relationship("Transaction", foreign_keys=[transaction_id])
+    payment_transaction = relationship("Transaction", foreign_keys=[payment_transaction_id])
     recipient = relationship("CommissionRecipient", back_populates="commissions")
+    client = relationship("Client")
+    service = relationship("Service")
+    rule = relationship("CommissionRule")
 

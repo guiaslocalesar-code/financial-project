@@ -111,7 +111,7 @@ class CommissionService:
 
         # 3. Update Commission
         commission.status = CommissionStatus.PAID
-        # If we had the field, we would do: commission.payment_transaction_id = payment_tx.id
+        commission.payment_transaction_id = payment_tx.id
         
         await db.commit()
         await db.refresh(commission)
