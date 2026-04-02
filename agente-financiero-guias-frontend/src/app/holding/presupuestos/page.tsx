@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { PlusIcon, ClipboardDocumentListIcon, EllipsisVerticalIcon, BanknotesIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ClipboardDocumentListIcon, EllipsisVerticalIcon, BanknotesIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition, Tab } from '@headlessui/react'
 import { Fragment } from 'react'
 import { clsx } from 'clsx'
@@ -23,6 +23,19 @@ export default function PresupuestosPage() {
     const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false)
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
     const [collectBudget, setCollectBudget] = useState<IncomeBudgetType | null>(null)
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+
+    const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+    const prevMonth = () => {
+        if (selectedMonth === 1) { setSelectedMonth(12); setSelectedYear(y => y - 1) }
+        else setSelectedMonth(m => m - 1)
+    }
+    const nextMonth = () => {
+        if (selectedMonth === 12) { setSelectedMonth(1); setSelectedYear(y => y + 1) }
+        else setSelectedMonth(m => m + 1)
+    }
 
     const { data: clients } = useQuery({
         queryKey: ['clients', selectedCompany?.id],
@@ -64,17 +77,14 @@ export default function PresupuestosPage() {
         enabled: !!selectedCompany,
     })
 
-    const now = new Date()
-    const currentMonth = now.getMonth() + 1
-    const currentYear = now.getFullYear()
 
     const { data: incomeBudgets, isLoading: isLoadingIncomes, error: incomeError } = useQuery({
-        queryKey: ['incomeBudgets', selectedCompany?.id],
+        queryKey: ['incomeBudgets', selectedCompany?.id, selectedMonth, selectedYear],
         queryFn: async () => {
             if (!selectedCompany) return []
             const res = await api.incomeBudgets.list(selectedCompany.id, {
-                month: currentMonth,
-                year: currentYear
+                month: selectedMonth,
+                year: selectedYear
             })
             const budgets = (res.data.data || res.data || []) as IncomeBudget[]
             
@@ -91,12 +101,12 @@ export default function PresupuestosPage() {
     })
 
     const { data: expenseBudgets, isLoading: isLoadingExpenses, error: expenseError } = useQuery({
-        queryKey: ['expenseBudgets', selectedCompany?.id],
+        queryKey: ['expenseBudgets', selectedCompany?.id, selectedMonth, selectedYear],
         queryFn: async () => {
             if (!selectedCompany) return []
             const res = await api.budgets.list(selectedCompany.id, {
-                month: currentMonth,
-                year: currentYear
+                month: selectedMonth,
+                year: selectedYear
             })
             const budgets = (res.data.data || res.data || []) as ExpenseBudget[]
             
@@ -148,15 +158,27 @@ export default function PresupuestosPage() {
                         Proyecciones de ingresos y egresos de <span className="font-semibold">{selectedCompany.name}</span>.
                     </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <button 
+                <div className="flex flex-wrap gap-2 items-center">
+                    {/* Month/Year Navigator */}
+                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-1 py-1 shadow-sm">
+                        <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                            <ChevronLeftIcon className="w-4 h-4" />
+                        </button>
+                        <span className="px-2 text-sm font-bold text-gray-700 min-w-[140px] text-center">
+                            {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
+                        </span>
+                        <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+                            <ChevronRightIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <button
                         onClick={() => setIsExpenseModalOpen(true)}
                         className="btn-primary bg-rose-600 hover:bg-rose-700 ring-rose-500/30"
                     >
                         <PlusIcon className="w-5 h-5" />
                         Nuevo Gasto
                     </button>
-                    <button 
+                    <button
                         onClick={() => setIsIncomeModalOpen(true)}
                         className="btn-primary bg-emerald-600 hover:bg-emerald-700 ring-emerald-500/30"
                     >
