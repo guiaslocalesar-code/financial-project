@@ -99,7 +99,7 @@ class CommissionService:
             company_id=commission.recipient.company_id,
             type=TransactionType.EXPENSE,
             amount=final_amount,
-            payment_method=PaymentMethod(payload.payment_method),
+            payment_method=PaymentMethod(payload.payment_method.upper()),
             payment_method_id=payload.payment_method_id,
             description=f"Liquidación Comisión: {commission.recipient.name}",
             transaction_date=payload.payment_date or date.today(),

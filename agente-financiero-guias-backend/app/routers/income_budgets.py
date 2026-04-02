@@ -7,9 +7,12 @@ from app.database import get_db
 from app.models.income_budget import IncomeBudget
 from app.models.transaction import Transaction
 from app.models.commission import Commission, CommissionRule, CommissionRecipient
-from app.utils.enums import IncomeBudgetStatus, TransactionType, CommissionStatus
-from app.schemas.income_budget import IncomeBudgetCreate, IncomeBudgetUpdate, IncomeBudgetResponse, IncomeBudgetCollect, IncomeSummary
+from app.models.client import Client
+from app.models.client_service import ClientService
+from app.utils.enums import IncomeBudgetStatus, TransactionType, CommissionStatus, ServiceStatus
+from app.schemas.income_budget import IncomeBudgetCreate, IncomeBudgetUpdate, IncomeBudgetResponse, IncomeBudgetCollect, IncomeSummary, IncomeBudgetGenerate
 from typing import List
+from calendar import monthrange
 
 router = APIRouter(prefix="/income-budgets", tags=["Income Budgets"])
 
@@ -141,4 +144,67 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
             "transaction_id": str(transaction.id),
             "was_invoiced": requires_invoice,
         }
+    }
+
+@router.post("/generate")
+async def generate_income_budgets(generate_in: IncomeBudgetGenerate, db: AsyncSession = Depends(get_db)):
+    # 1. Fetch all ACTIVE client services for this company
+    query = select(ClientService).join(Client).where(
+        Client.company_id == generate_in.company_id,
+        ClientService.status == ServiceStatus.ACTIVE
+    )
+    # Date filtering (simple): start_date <= last day of target month
+    # and (end_date is null or end_date >= first day of target month)
+    last_day_of_month = date_type(generate_in.year, generate_in.month, monthrange(generate_in.year, generate_in.month)[1])
+    first_day_of_month = date_type(generate_in.year, generate_in.month, 1)
+    
+    query = query.where(
+        ClientService.start_date <= last_day_of_month
+    ).where(
+        (ClientService.end_date == None) | (ClientService.end_date >= first_day_of_month)
+    )
+
+    result = await db.execute(query)
+    active_services = result.scalars().all()
+
+    created_count = 0
+    skipped_count = 0
+
+    for service in active_services:
+        # Check if budget already exists for this client-service-period
+        exists_query = select(IncomeBudget).where(
+            IncomeBudget.company_id == generate_in.company_id,
+            IncomeBudget.client_id == service.client_id,
+            IncomeBudget.service_id == service.service_id,
+            IncomeBudget.period_month == generate_in.month,
+            IncomeBudget.period_year == generate_in.year
+        )
+        exists_result = await db.execute(exists_query)
+        if exists_result.scalar_one_or_none():
+            skipped_count += 1
+            continue
+
+        # Create new budget
+        new_budget = IncomeBudget(
+            company_id=generate_in.company_id,
+            client_id=service.client_id,
+            service_id=service.service_id,
+            budgeted_amount=service.monthly_fee,
+            planned_date=first_day_of_month,
+            period_month=generate_in.month,
+            period_year=generate_in.year,
+            is_recurring=True,
+            status=IncomeBudgetStatus.PENDING,
+            notes=f"Generado automáticamente basado en abono mensual para {generate_in.month}/{generate_in.year}"
+        )
+        db.add(new_budget)
+        created_count += 1
+
+    if created_count > 0:
+        await db.commit()
+    
+    return {
+        "budgets_created": created_count,
+        "budgets_skipped": skipped_count,
+        "message": f"Se generaron {created_count} presupuestos de ingreso para {generate_in.month}/{generate_in.year}. {skipped_count} ya existían y fueron omitidos."
     }

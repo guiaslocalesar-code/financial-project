@@ -14,6 +14,11 @@ class IncomeBudgetCreate(BaseModel):
     is_recurring: bool = True
     notes: str | None = None
 
+class IncomeBudgetGenerate(BaseModel):
+    company_id: UUID
+    month: int
+    year: int
+
 class IncomeBudgetUpdate(BaseModel):
     budgeted_amount: float | None = None
     actual_amount: float | None = None

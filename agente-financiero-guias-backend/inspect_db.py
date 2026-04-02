@@ -15,7 +15,7 @@ async def inspect():
         tables = [r[0] for r in res.fetchall()]
         print(f"Tables: {tables}")
         
-        for t in ['users', 'company_users', 'profiles', 'roles', 'user_roles']:
+        for t in ['users', 'company_users', 'profiles', 'roles', 'user_roles', 'commissions']:
             if t in tables:
                 print(f"--- COLUMNS IN {t} ---")
                 res = await conn.execute(text(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name='{t}'"))
