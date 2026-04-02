@@ -54,6 +54,8 @@ export interface Commission {
     company_id?: string;
     base_amount?: number;
     commission_amount?: number;
+    commission_percentage?: number;
+    was_invoiced?: boolean;
     payment_date?: string;
     payment_method?: string;
     actual_amount?: number;

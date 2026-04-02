@@ -64,12 +64,13 @@ export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: P
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {commissions.map((comm) => {
-                        // Backend returns 'amount' for commission_amount, base_amount may not exist
+                        // Backend returns 'amount' for commission_amount
                         const commissionAmount = comm.commission_amount ?? comm.amount ?? 0
+                        
+                        // Use backend values if available (new logic), or fallback to calculation (old logic)
                         const baseAmount = comm.base_amount ?? 0
-                        const percentage = baseAmount > 0 
-                            ? (commissionAmount / baseAmount) * 100 
-                            : 0;
+                        const percentage = comm.commission_percentage ?? (baseAmount > 0 ? (commissionAmount / baseAmount) * 100 : 0);
+                        
                         const displayDate = comm.transaction_date || comm.created_at
 
                         return (
@@ -85,7 +86,14 @@ export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: P
                                 <td>
                                     <div className="flex flex-col text-sm">
                                         <span className="text-gray-700 font-medium">{comm.client_name || comm.transaction_description || '—'}</span>
-                                        <span className="text-gray-400 text-xs italic">{comm.service_name || ''}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-gray-400 text-xs italic">{comm.service_name || ''}</span>
+                                            {comm.was_invoiced ? (
+                                                <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100 font-bold uppercase tracking-tighter">🧾 Blanco</span>
+                                            ) : (
+                                                <span className="text-[9px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded border border-gray-100 font-bold uppercase tracking-tighter italic">Negro</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </td>
                                 <td className="text-right font-mono text-gray-600">
