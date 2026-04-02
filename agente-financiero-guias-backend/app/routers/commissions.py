@@ -123,8 +123,11 @@ async def list_commissions(
 ):
     query = select(Commission).options(
         joinedload(Commission.recipient),
-        joinedload(Commission.transaction).joinedload(Transaction.client),
-        joinedload(Commission.transaction).joinedload(Transaction.service)
+        joinedload(Commission.transaction).options(
+            joinedload(Transaction.client),
+            joinedload(Transaction.service),
+            joinedload(Transaction.income_budget)
+        )
     )
     
     if recipient_id:
@@ -140,10 +143,23 @@ async def list_commissions(
     for comm in commissions:
         if comm.recipient:
             setattr(comm, "recipient_name", comm.recipient.name)
+        
         if comm.transaction:
             setattr(comm, "transaction_description", comm.transaction.description)
             setattr(comm, "transaction_date", comm.transaction.transaction_date)
             setattr(comm, "was_invoiced", getattr(comm.transaction, 'requires_invoice', False))
+            
+            # Calculate base_amount and percentage if they are not in the model (DB)
+            # but we can get them from the original income budget
+            budget_amount = 0
+            if comm.transaction.income_budget:
+                budget_amount = float(comm.transaction.income_budget.budgeted_amount)
+                setattr(comm, "base_amount", budget_amount)
+                
+                if budget_amount > 0:
+                    percentage = (float(comm.amount) / budget_amount) * 100
+                    setattr(comm, "commission_percentage", round(percentage, 2))
+
             if comm.transaction.client:
                 setattr(comm, "client_name", comm.transaction.client.name)
                 setattr(comm, "client_logo", comm.transaction.client.imagen)
@@ -181,8 +197,11 @@ async def get_recipient_summary(recipient_id: UUID, db: AsyncSession = Depends(g
         raise HTTPException(status_code=404, detail="Recipient not found")
         
     comm_query = select(Commission).options(
-        joinedload(Commission.transaction).joinedload(Transaction.client),
-        joinedload(Commission.transaction).joinedload(Transaction.service)
+        joinedload(Commission.transaction).options(
+            joinedload(Transaction.client),
+            joinedload(Transaction.service),
+            joinedload(Transaction.income_budget)
+        )
     ).where(Commission.recipient_id == recipient_id)
     
     comm_res = await db.execute(comm_query)
@@ -198,6 +217,16 @@ async def get_recipient_summary(recipient_id: UUID, db: AsyncSession = Depends(g
             setattr(comm, "transaction_description", comm.transaction.description)
             setattr(comm, "transaction_date", comm.transaction.transaction_date)
             setattr(comm, "was_invoiced", getattr(comm.transaction, 'requires_invoice', False))
+            
+            # Calculate base_amount and percentage
+            budget_amount = 0
+            if comm.transaction.income_budget:
+                budget_amount = float(comm.transaction.income_budget.budgeted_amount)
+                setattr(comm, "base_amount", budget_amount)
+                
+                if budget_amount > 0:
+                    percentage = (float(comm.amount) / budget_amount) * 100
+                    setattr(comm, "commission_percentage", round(percentage, 2))
             if comm.transaction.client:
                 setattr(comm, "client_name", comm.transaction.client.name)
                 setattr(comm, "client_logo", comm.transaction.client.imagen)
