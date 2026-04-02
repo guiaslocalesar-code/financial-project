@@ -117,11 +117,14 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
             match = True  # Global rule
 
         if match:
-            comm_amount = (commission_base * float(rule.percentage)) / 100
+            percentage = float(rule.percentage)
+            comm_amount = (commission_base * percentage) / 100
             new_comm = Commission(
                 transaction_id=transaction.id,
                 recipient_id=rule.recipient_id,
                 amount=comm_amount,
+                base_amount=commission_base,
+                commission_percentage=percentage,
                 status=CommissionStatus.PENDING
             )
             db.add(new_comm)

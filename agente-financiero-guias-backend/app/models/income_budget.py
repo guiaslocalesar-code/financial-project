@@ -21,6 +21,9 @@ class IncomeBudget(Base):
     status: Mapped[IncomeBudgetStatus] = mapped_column(SQLEnum(IncomeBudgetStatus, name="incomebudgetstatus"), default=IncomeBudgetStatus.PENDING, nullable=False)
     transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
+    requires_invoice: Mapped[bool] = mapped_column(Boolean, default=False)
+    iva_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0.0)
+    iva_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 

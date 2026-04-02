@@ -143,6 +143,7 @@ async def list_commissions(
         if comm.transaction:
             setattr(comm, "transaction_description", comm.transaction.description)
             setattr(comm, "transaction_date", comm.transaction.transaction_date)
+            setattr(comm, "was_invoiced", getattr(comm.transaction, 'requires_invoice', False))
             if comm.transaction.client:
                 setattr(comm, "client_name", comm.transaction.client.name)
                 setattr(comm, "client_logo", comm.transaction.client.imagen)
@@ -196,6 +197,7 @@ async def get_recipient_summary(recipient_id: UUID, db: AsyncSession = Depends(g
         if comm.transaction:
             setattr(comm, "transaction_description", comm.transaction.description)
             setattr(comm, "transaction_date", comm.transaction.transaction_date)
+            setattr(comm, "was_invoiced", getattr(comm.transaction, 'requires_invoice', False))
             if comm.transaction.client:
                 setattr(comm, "client_name", comm.transaction.client.name)
                 setattr(comm, "client_logo", comm.transaction.client.imagen)

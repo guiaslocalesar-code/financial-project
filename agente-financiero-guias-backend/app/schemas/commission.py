@@ -57,6 +57,8 @@ class CommissionBase(BaseModel):
     transaction_id: str | UUID
     recipient_id: str | UUID
     amount: float
+    base_amount: float | None = None
+    commission_percentage: float | None = None
     status: str = "PENDING"
 
 class CommissionStatusUpdate(BaseModel):
@@ -72,6 +74,7 @@ class CommissionResponse(CommissionBase):
     service_name: str | None = None
     transaction_description: str | None = None
     transaction_date: date | None = None
+    was_invoiced: bool | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
