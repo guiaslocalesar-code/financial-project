@@ -11,7 +11,7 @@ class PaymentMethod(Base):
     id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    type: Mapped[PaymentMethodType] = mapped_column(SQLEnum(PaymentMethodType, name="paymentmethodtype"), nullable=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
     bank: Mapped[str] = mapped_column(String(100), nullable=True)
     is_credit: Mapped[bool] = mapped_column(Boolean, default=False)
     closing_day: Mapped[int] = mapped_column(Integer, nullable=True)

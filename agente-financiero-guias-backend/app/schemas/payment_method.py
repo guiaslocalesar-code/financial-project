@@ -5,7 +5,7 @@ from app.utils.enums import PaymentMethodType
 
 class PaymentMethodBase(BaseModel):
     name: str = Field(..., max_length=100)
-    type: PaymentMethodType
+    type: str # changed from PaymentMethodType
     bank: str | None = Field(None, max_length=100)
     is_credit: bool = False
     closing_day: int | None = Field(None, ge=1, le=31)
@@ -16,7 +16,7 @@ class PaymentMethodCreate(PaymentMethodBase):
 
 class PaymentMethodUpdate(BaseModel):
     name: str | None = Field(None, max_length=100)
-    type: PaymentMethodType | None = None
+    type: str | None = None # changed from PaymentMethodType | None
     bank: str | None = Field(None, max_length=100)
     is_credit: bool | None = None
     closing_day: int | None = Field(None, ge=1, le=31)
