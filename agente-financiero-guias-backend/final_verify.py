@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from sqlalchemy import select
 from app.database import engine
 from app.models.income_budget import IncomeBudget
@@ -11,12 +12,12 @@ async def check():
         for model in [IncomeBudget, Transaction, Commission]:
             try:
                 print(f'Testing {model.__name__}...', end='', flush=True)
-                # Raw SQL select * to trigger column mapping
                 res = await conn.execute(select(model).limit(1))
-                res.all()
-                print(' OK')
-            except Exception as e:
-                print(f' FAILED: {str(e)}')
+                data = res.all()
+                print(f' OK (rows: {len(data)})')
+            except Exception:
+                print(' FAILED')
+                traceback.print_exc()
 
 if __name__ == "__main__":
     asyncio.run(check())
