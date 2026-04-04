@@ -84,6 +84,12 @@ class CommissionPay(BaseModel):
     payment_date: date | None = None
     actual_amount: float | None = None
 
+class BulkPayPayload(BaseModel):
+    commission_ids: list[UUID]
+    payment_method: str
+    payment_method_id: str | UUID | None = None
+    payment_date: date | None = None
+
 class RecipientStats(BaseModel):
     total_earned: float = 0
     total_pending: float = 0

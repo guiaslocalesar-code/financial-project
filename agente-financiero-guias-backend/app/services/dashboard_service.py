@@ -144,7 +144,7 @@ class DashboardService:
         recipient_count = 0
         top_recipients = []
 
-        # We filter based on when they were created or updated within the range
+        # Total pending: all pending generated up to the end of the selected period
         try:
             pending_res = await db.execute(
                 select(func.sum(Commission.amount))
@@ -153,7 +153,6 @@ class DashboardService:
                 .where(
                     CommissionRecipient.company_id == company_id,
                     Commission.status == CommissionStatus.PENDING,
-                    func.cast(Commission.created_at, date) >= start_date,
                     func.cast(Commission.created_at, date) <= end_date
                 )
             )

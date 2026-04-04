@@ -1,25 +1,21 @@
 import asyncio
+import uuid
+from app.database import engine
 from sqlalchemy import text
-from app.database import AsyncSessionLocal
 
-async def check():
-    async with AsyncSessionLocal() as db:
-        # Check commissions
-        res = await db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'commissions'"))
-        print("commissions:", [r[0] for r in res.fetchall()])
+async def check_schema():
+    async with engine.connect() as conn:
+        print("Checking tables in database...")
+        tables = await conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
+        print("Tables:", [r[0] for r in tables])
         
-        # Check transactions
-        res = await db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'transactions'"))
-        print("transactions:", [r[0] for r in res.fetchall()])
+        print("\nChecking columns in 'transactions' table...")
+        res = await conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'transactions'"))
+        print("Transactions columns:", [r[0] for r in res])
 
-        # Check income_budgets
-        res = await db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'income_budgets'"))
-        print("income_budgets:", [r[0] for r in res.fetchall()])
-
-        # Also get Electro Alem commission to see why it fails PAY
-        comm_id = "c60d060e-645c-47d1-8bbb-2234422feff7"
-        res = await db.execute(text(f"SELECT id, status, commission_amount FROM commissions WHERE id = '{comm_id}'"))
-        print("Electro Alem Comm:", res.fetchone())
+        print("\nChecking columns in 'income_budgets' table...")
+        res = await conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'income_budgets'"))
+        print("Income Budgets columns:", [r[0] for r in res])
 
 if __name__ == "__main__":
-    asyncio.run(check())
+    asyncio.run(check_schema())

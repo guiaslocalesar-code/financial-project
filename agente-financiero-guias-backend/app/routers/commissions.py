@@ -115,10 +115,14 @@ async def delete_rule(rule_id: UUID, db: AsyncSession = Depends(get_db)):
     return {"status": "success", "message": "Rule deleted"}
 
 # Commissions
+from app.schemas.commission import RecipientSummary, CommissionPay, BulkPayPayload
+
 @router.get("", response_model=list[CommissionResponse])
 async def list_commissions(
     company_id: Optional[UUID] = None,
     recipient_id: Optional[UUID] = None, 
+    month: Optional[int] = None,
+    year: Optional[int] = None,
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Commission).options(
@@ -136,9 +140,21 @@ async def list_commissions(
     if company_id:
         query = query.join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id) \
                      .where(CommissionRecipient.company_id == company_id)
+    
+    # Filtering by Month/Year if provided
+    if month and year:
+        # We join with transaction to filter by transaction_date, 
+        # or we could filter by created_at of the commission itself.
+        # Financial context usually prefers the transaction_date.
+        query = query.join(Transaction, Commission.transaction_id == Transaction.id) \
+                     .where(
+                         func.extract('month', Transaction.transaction_date) == month,
+                         func.extract('year', Transaction.transaction_date) == year
+                     )
                      
     result = await db.execute(query)
     commissions = result.scalars().all()
+    # ... rest of the existing logic ...
     
     for comm in commissions:
         if comm.recipient:
@@ -279,5 +295,16 @@ async def pay_commission(
                 setattr(commission, "service_name", commission.transaction.service.name or commission.transaction.service.nombre)
                 
         return commission
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/bulk-pay")
+async def bulk_pay_commissions(
+    payload: BulkPayPayload,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        results = await commission_service.bulk_pay_commissions(payload, db)
+        return results
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

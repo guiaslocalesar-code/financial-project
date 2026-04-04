@@ -129,4 +129,46 @@ class CommissionService:
         commission = reload_result.scalar_one()
         return commission
 
+    async def bulk_pay_commissions(self, payload: BulkPayPayload, db: AsyncSession):
+        """
+        Pays multiple commissions in a batch.
+        """
+        results = []
+        for commission_id in payload.commission_ids:
+            try:
+                # Reuse the single payment logic but localized to a sub-transaction if needed
+                # For now, we manually do the logic to avoid multiple commits inside the loop
+                # for better performance and session control.
+                
+                query = select(Commission).options(joinedload(Commission.recipient)).where(Commission.id == commission_id)
+                res = await db.execute(query)
+                comm = res.scalar_one_or_none()
+                
+                if not comm or comm.status == CommissionStatus.PAID:
+                    results.append({"id": str(commission_id), "status": "skipped"})
+                    continue
+
+                payment_tx = Transaction(
+                    company_id=comm.recipient.company_id,
+                    type=TransactionType.EXPENSE,
+                    amount=float(comm.amount),
+                    payment_method=PaymentMethod(payload.payment_method.upper()),
+                    payment_method_id=payload.payment_method_id if payload.payment_method_id else None,
+                    description=f"Liquidación Comisión: {comm.recipient.name}",
+                    transaction_date=payload.payment_date or date.today(),
+                    is_budgeted=False
+                )
+                db.add(payment_tx)
+                await db.flush()
+
+                comm.status = CommissionStatus.PAID
+                comm.payment_transaction_id = payment_tx.id
+                results.append({"id": str(commission_id), "status": "paid"})
+                
+            except Exception as e:
+                results.append({"id": str(commission_id), "status": "error", "error": str(e)})
+
+        await db.commit()
+        return results
+
 commission_service = CommissionService()
