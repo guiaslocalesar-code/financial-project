@@ -12,6 +12,7 @@ cryptography
 git+https://github.com/reingart/pyafipws.git@py3k
 PySimpleSOAP
 httplib2
+reportlab
 httpx
 pytest
 pytest-asyncio
