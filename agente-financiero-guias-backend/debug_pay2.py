@@ -7,13 +7,12 @@ from app.schemas.commission import CommissionPay
 async def debug_pay():
     async with SessionLocal() as db:
         try:
-            # Reusing the old one or just testing another
-            comm_id = uuid.UUID("d4d7bb5f-b8cf-4d2f-ab26-15a2a3ab55f0") # I tried to read from screenshot
+            comm_id = uuid.UUID("64d37885-bbcf-4d2f-ab26-15a2a3ab55f0")
             payload = CommissionPay(
                 payment_method="transfer",
                 payment_date="2026-04-03",
                 payment_method_id="pm_transferencia",
-                actual_amount=38400
+                actual_amount=23520
             )
             comm = await commission_service.pay_commission(comm_id, payload, db)
             print("SUCCESS", comm)

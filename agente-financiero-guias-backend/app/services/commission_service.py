@@ -114,7 +114,15 @@ class CommissionService:
         commission.payment_transaction_id = payment_tx.id
         
         await db.commit()
-        await db.refresh(commission)
+
+        # Re-fetch with eager loading to avoid greenlet_spawn on lazy access
+        reload_query = (
+            select(Commission)
+            .options(joinedload(Commission.recipient))
+            .where(Commission.id == commission_id)
+        )
+        reload_result = await db.execute(reload_query)
+        commission = reload_result.scalar_one()
         return commission
 
 commission_service = CommissionService()

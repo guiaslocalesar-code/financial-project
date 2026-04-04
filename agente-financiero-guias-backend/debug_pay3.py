@@ -4,22 +4,21 @@ from app.database import SessionLocal
 from app.services.commission_service import commission_service
 from app.schemas.commission import CommissionPay
 
-async def debug_pay():
+async def test_pay():
     async with SessionLocal() as db:
         try:
-            # Reusing the old one or just testing another
-            comm_id = uuid.UUID("d4d7bb5f-b8cf-4d2f-ab26-15a2a3ab55f0") # I tried to read from screenshot
+            comm_id = uuid.UUID("db3bc117-63f8-48b3-8ad8-36257e0badaf")
             payload = CommissionPay(
                 payment_method="transfer",
                 payment_date="2026-04-03",
                 payment_method_id="pm_transferencia",
-                actual_amount=38400
+                actual_amount=12000
             )
             comm = await commission_service.pay_commission(comm_id, payload, db)
-            print("SUCCESS", comm)
+            print("SUCCESS! Commission paid locally without error!")
         except Exception as e:
             import traceback
             traceback.print_exc()
 
 if __name__ == "__main__":
-    asyncio.run(debug_pay())
+    asyncio.run(test_pay())
