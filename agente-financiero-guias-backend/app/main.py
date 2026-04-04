@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 import inspect
 if not hasattr(inspect, 'getargspec'):
     inspect.getargspec = inspect.getfullargspec
-
-=======
->>>>>>> financial-project/main
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -17,16 +13,14 @@ from app.routers import (
 )
 from afip_integration.routers import invoices as afip_invoices
 
+# Force deploy to Cloud Run with updated master branch config
 app = FastAPI(
     title="Marketing Agency Financial API",
     description="Backend for managing agency finances, client invoicing (AFIP), and profitability.",
     version="1.0.0",
     docs_url="/docs",
     openapi_url="/openapi.json",
-<<<<<<< HEAD
     redirect_slashes=False,
-=======
->>>>>>> financial-project/main
 )
 
 # CORS configuration
