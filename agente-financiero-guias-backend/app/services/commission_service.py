@@ -115,10 +115,14 @@ class CommissionService:
         
         await db.commit()
 
-        # Re-fetch with eager loading to avoid greenlet_spawn on lazy access
+        # Re-fetch with eager loading for all required UI fields
         reload_query = (
             select(Commission)
-            .options(joinedload(Commission.recipient))
+            .options(
+                joinedload(Commission.recipient),
+                joinedload(Commission.transaction).joinedload(Transaction.client),
+                joinedload(Commission.transaction).joinedload(Transaction.service)
+            )
             .where(Commission.id == commission_id)
         )
         reload_result = await db.execute(reload_query)

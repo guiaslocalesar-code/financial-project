@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
 import { 
@@ -9,6 +10,16 @@ import {
 
 export function useCommissions(companyId?: string) {
     const queryClient = useQueryClient()
+
+    // Sync effect for external triggers (like 400 errors)
+    useEffect(() => {
+        const handleRefresh = () => {
+            queryClient.invalidateQueries({ queryKey: ['commissions'] })
+            queryClient.invalidateQueries({ queryKey: ['commissions-summary'] })
+        };
+        window.addEventListener('refresh-commissions', handleRefresh);
+        return () => window.removeEventListener('refresh-commissions', handleRefresh);
+    }, [queryClient])
 
     // ── Resumen Dashboard ───────────────────────────────────────────────────
     const summaryQuery = useQuery({

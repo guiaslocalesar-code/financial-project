@@ -87,6 +87,8 @@ export function CommissionPayModal({ isOpen, onClose, commission, companyId }: P
             onError: (error: any) => {
                 if (error.response?.status === 400) {
                     setServerError("Esta comisión ya fue pagada. Por favor, actualizá la lista.")
+                    // Forced refresh to sync with DB state
+                    window.dispatchEvent(new CustomEvent('refresh-commissions'));
                 } else {
                     setServerError("Hubo un error al procesar el pago. Reintentá en unos momentos.")
                 }
