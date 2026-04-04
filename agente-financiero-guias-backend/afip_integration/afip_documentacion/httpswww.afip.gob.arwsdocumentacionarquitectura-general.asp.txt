@@ -1,0 +1,20 @@
+Arquitectura general
+El intercambio de información entre ARCA y los entes externos (EE) se implementa a través de Web Services SOAP sobre transporte HTTPS.
+
+Todos estos web services de negocio (WSN) están directamente accesibles a través de Internet, no se requiere el establecimiento de canales especiales de comunicaciones ni VPNs. El acceso a los WSN está regulado por otro WS llamado WSAA (Web Service de Autenticación y Autorización), que autentica a las aplicaciones clientes y les concede permiso de acceso a cada WSN mediante el otorgamiento de un Ticket de Acceso (TA).
+
+Cada TA es válido para un WSN en particular y tiene una validez limitada en el tiempo (actualmente, 12 horas). La aplicación cliente será responsable de presentar al WSN el TA otorgado por el WSAA, de lo contrario el WSN rechazará su solicitud de acceso.
+
+El diagrama muestra el flujo entre los servicios, tanto en el Entorno de testing como en el de producción:
+
+Diagrama de flujo entre los servicios
+Autenticación y autorización
+La autenticación del cliente se realiza utilizando criptografía de clave pública basada en certificados digitales X.509. A estos efectos, ARCA actúa como Autoridad Certificante y emite estos certificados sin aplicar ningún cargo a los EE.
+
+Una vez obtenido el certificado digital el EE llevará a cabo los trámites requeridos en cada caso para obtener la autorización inicial para acceder a un WSN y lo relacionará con un certificado digital.
+
+El cliente solicitará al WSAA que le conceda un TA para un WSN en particular mediante el envío de una estructura CMS (ver PKCS#7, S/MIME) conteniendo la solicitud propiamente dicha (ver TRA en Manual para el desarrollador del WSAA) más su firma digital separada más su certificado X.509. Basado en el análisis de estos datos, el WSAA autenticará al cliente mediante la verificación de su firma digital y la comprobación en su base de datos de que el EE haya completado los trámites de autorización inicial para acceder al WSN para el cual solicita permiso en el TRA; si estos controles son superados, entonces el WSAA contestará devolviendo un TA, de lo contrario, devolverá un mensaje de error explicativo.
+
+El cliente del WSN extraerá del TA dos componentes, Token y Sign, y los enviará junto con los datos de negocio en cada solicitud que le envíe al WSN.
+
+

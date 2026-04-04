@@ -1,0 +1,119 @@
+Fecha ,ID,Tipo,Egresos,ESTIMADO,ESTADO,Medio de Pago,Categoria,Origen
+1/1/2026,01-01-9780,Herramientas,Google Drive,"$29,000.00",Pago Realizado,Mp6,Variable,Presupuestado
+3/1/2026,01-03-7086,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+3/1/2026,01-03-1403,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+3/1/2026,01-03-5928,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+3/1/2026,01-03-2655,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+3/1/2026,01-03-4003,Oficina,Seguro,"$12,569.00",Pago Realizado,Mp1,Variable,Presupuestado
+5/1/2026,01-05-9690,Sueldos,Fernando Rivetti,"$800,000.43",Pago Realizado,Mp2,Fijo,Presupuestado
+5/1/2026,01-05-5040,Herramientas,Zapier Guias,"$45,000.00",Pago Realizado,Mp6,Variable,Presupuestado
+7/1/2026,01-07-6096,Operativos,Luz,"$100,000.00",Pago Realizado,Mp1,Variable,No Presupuestado
+10/1/2026,01-10-1325,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+10/1/2026,01-10-1366,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+10/1/2026,01-10-8260,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+10/1/2026,01-10-9424,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+10/1/2026,01-10-9119,Oficina,Alquiler,"$313,451.00",Pago Realizado,Mp5,Variable,No Presupuestado
+10/1/2026,01-10-2350,Operativos,Internet ,"$75,000.00",Pago Realizado,Mp1,Variable,No Presupuestado
+10/1/2026,01-10-8617,Oficina,Internet Joha,"$16,000.00",Pago Realizado,Mp1,Variable,No Presupuestado
+14/1/2026,01-14-8418,Herramientas,Chatgpt,"$30,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+15/1/2026,01-15-5790,Oficina,Linea Lea,"$9,000.00",Pago Realizado,Mp1,Variable,Presupuestado
+15/1/2026,01-15-7914,Oficina,Linea Joha,"$16,000.00",Pago Realizado,Mp1,Variable,Presupuestado
+16/1/2026,01-16-5841,Herramientas,Tars,"$27,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+16/1/2026,01-16-5841,Impuestos,Juan Contador,"$320,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+16/1/2026,01-16-5841,Operativos,Expensas,"$75,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+17/1/2026,01-17-9689,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+17/1/2026,01-17-2502,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+17/1/2026,01-17-3132,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+17/1/2026,01-17-1587,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+17/1/2026,01-17-9120,Herramientas,Capcut,"$30,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+18/1/2026,01-18-1793,Herramientas,Canva,"$5,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+18/1/2026,01-18-5173,Impuestos,Afip,"$330,000.00",Pago Realizado,Mp4,Variable,Presupuestado
+23/1/2026,01-23-3823,Herramientas,Metricool,"$130,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+24/1/2026,01-24-3532,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+24/1/2026,01-24-8724,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+24/1/2026,01-24-1995,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+24/1/2026,01-24-9391,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+26/1/2026,01-26-4829,Herramientas,Photoshop,"$11,272.00",Pago Realizado,Mp2,Variable,Presupuestado
+27/1/2026,01-27-9122,Herramientas,Zapier SA,"$45,000.00",Pago Realizado,Mp2,Variable,Presupuestado
+31/1/2026,01-31-5244,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+31/1/2026,01-31-7062,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+31/1/2026,01-31-1176,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+31/1/2026,01-31-8966,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+31/1/2026,01-31-6573,Herramientas,Alegra,"$7,300.00",Pago Realizado,Mp2,Variable,Presupuestado
+1/2/2026,02-01-4858,Herramientas,Google Drive,"$29,000.00",Pago Realizado,Mp6,,
+3/2/2026,02-03-7408,Oficina,Seguro,"$12,569.00",Pago Realizado,Mp1,,
+5/2/2026,02-05-6282,Sueldos,Fernando Rivetti,"$800,000.43",Pago Realizado,Mp2,Fijo,Presupuestado
+5/2/2026,02-05-1072,Herramientas,Zapier Guias,"$45,000.00",Pago Realizado,Mp6,,
+7/2/2026,02-07-2403,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+7/2/2026,02-07-4064,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+7/2/2026,02-07-4756,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+7/2/2026,02-07-3448,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+7/2/2026,02-07-5237,Oficina,Luz,"$100,000.00",Pago Realizado,Mp1,,
+10/2/2026,02-10-8118,Impuestos,Juan Contador,"$320,000.00",Pago Realizado,Mp2,,
+10/2/2026,02-10-8118,Oficina,Alquiler,"$313,451.00",Pago Realizado,Mp5,,
+10/2/2026,02-10-4628,Oficina,Internet ,"$75,000.00",Pago Realizado,Mp1,,
+10/2/2026,02-10-3977,Oficina,Internet Joha,"$16,000.00",Pago Realizado,Mp1,,
+14/2/2026,02-14-6642,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+14/2/2026,02-14-3308,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+14/2/2026,02-14-5032,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+14/2/2026,02-14-3566,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+14/2/2026,02-14-7884,Herramientas,Chatgpt,"$30,000.00",Pago Realizado,Mp2,,
+15/2/2026,02-15-4124,Oficina,Linea Lea,"$9,000.00",Pago Realizado,Mp1,,
+15/2/2026,02-15-3411,Oficina,Linea Joha,"$16,000.00",Pago Realizado,Mp1,,
+16/2/2026,02-16-8824,Herramientas,Tars,"$27,000.00",Pago Realizado,Mp2,,
+17/2/2026,1771358149648,Operativos,Café de esta mañana - gasto de empresa,"$3,600.00",Pago Realizado,Mp7,Variable,No presupuestado
+17/2/2026,02-17-2401,Herramientas,Capcut,"$30,000.00",Pago Realizado,Mp2,,
+18/2/2026,02-18-6279,Herramientas,Canva,"$5,000.00",Pago Realizado,Mp2,,
+18/2/2026,02-18-9396,Impuestos,Afip,"$330,000.00",Pago Realizado,Mp4,,
+21/2/2026,02-21-8107,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+21/2/2026,02-21-1110,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+21/2/2026,02-21-4182,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+21/2/2026,02-21-2507,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+23/2/2026,02-23-3240,Herramientas,Metricool,"$130,000.00",Pago Realizado,Mp2,,
+26/2/2026,1772132181592,Operativo,Anuncios en Gato de Negocio,"$200,000.00",Pago Realizado,Mp7,Variable,No presupuestado
+26/2/2026,02-26-3870,Herramientas,Photoshop,"$11,272.00",Pago Realizado,Mp2,,
+27/2/2026,02-27-9384,Herramientas,Zapier SA,"$45,000.00",Pago Realizado,Mp2,,
+28/2/2026,02-28-1654,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+28/2/2026,02-28-2308,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+28/2/2026,02-28-4493,Sueldos,Facundo Fredes,"$120,000.00",Pago Realizado,Mp2,Fijo,Presupuestado
+28/2/2026,02-28-2380,Sueldos,Romina Mercado,"$122,400.00",Pago Realizado,Mp2,Fijo,Presupuestado
+1/3/2026,03-01-6379,Herramientas,Google Drive,"$29,000.00",Pago Realizado,Mp6,Fijo,Presupuestado
+3/3/2026,02-31-5596,Herramientas,Alegra,"$7,300.00",Pago Realizado,Mp2,,
+3/3/2026,03-03-9609,Oficina,Seguro,"$12,569.00",Pago Realizado,Mp1,Fijo,Presupuestado
+5/3/2026,3/5/8064,Sueldos,Fernando Rivetti,"$800,000.43",Pendiente,Mp7,Variable,Presupuestado
+5/3/2026,03-05-8829,Herramientas,Zapier Guias,"$45,000.00",Pago Realizado,Mp6,Fijo,Presupuestado
+6/3/2026,1772804982039,Operativos,café de reunión,"$7,000.00",Pago Realizado,Mp7,Variable,No presupuestado
+7/3/2026,3/7/7926,Sueldos,Johana Zamudio,"$250,000.00",Pago Realizado,Mp7,Variable,Presupuestado
+7/3/2026,3/7/3172,Sueldos,Leandro Mercado,"$250,000.00",Pago Realizado,Mp7,Variable,Presupuestado
+7/3/2026,3/7/6093,Sueldos,Facundo Fredes,"$140,000.00",Pago Realizado,Mp7,Variable,Presupuestado
+7/3/2026,3/7/1049,Sueldos,Romina Mercado,"$136,000.00",Pendiente,Mp7,Variable,Presupuestado
+7/3/2026,03-07-6961,Oficina,Luz,"$100,000.00",Pago Realizado,Mp1,Variable,Presupuestado
+10/3/2026,03-10-3841,Oficina,Alquiler,"$313,451.00",Pago Realizado,Mp5,Fijo,Presupuestado
+10/3/2026,03-10-8098,Oficina,Internet ,"$75,000.00",Pago Realizado,Mp1,Fijo,Presupuestado
+10/3/2026,03-10-7343,Oficina,Internet Joha,"$16,000.00",Pago Realizado,Mp1,Fijo,Presupuestado
+12/3/2026,1773298006685,Operativos,Nafta de la empresa,"$17,480.00",Pago Realizado,Mp7,Variable,No presupuestado
+13/3/2026,1773435051551,,Café y sándwich de miga,"$5,000.00",Pago Realizado,Mp7,Variable,No presupuestado
+14/3/2026,03-14-3384,Sueldos,Johana Zamudio,"$250,000.00",Pendiente,Mp7,Variable,Presupuestado
+14/3/2026,03-14-8872,Sueldos,Leandro Mercado,"$250,000.00",Pendiente,Mp7,Variable,Presupuestado
+14/3/2026,03-14-2725,Sueldos,Facundo Fredes,"$140,000.00",Pendiente,Mp7,Variable,Presupuestado
+14/3/2026,03-14-6316,Sueldos,Romina Mercado,"$136,000.00",Pendiente,Mp7,Variable,Presupuestado
+14/3/2026,03-14-1979,Herramientas,Chatgpt,"$30,000.00",pendiente,Mp2,Fijo,Presupuestado
+15/3/2026,03-15-5037,Oficina,Linea Lea,"$9,000.00",pendiente,Mp1,Fijo,Presupuestado
+15/3/2026,03-15-6560,Oficina,Linea Joha,"$16,000.00",pendiente,Mp1,Fijo,Presupuestado
+16/3/2026,03-16-1686,Herramientas,Tars,"$27,000.00",pendiente,Mp2,Fijo,Presupuestado
+16/3/2026,ceae5c45,Impuestos,Juan Contador,"$320,000.00",pendiente,Mp2,Fijo,Presupuestado
+17/3/2026,03-17-2260,Herramientas,Capcut,"$30,000.00",pendiente,Mp2,Fijo,Presupuestado
+18/3/2026,03-18-9069,Herramientas,Canva,"$5,000.00",pendiente,Mp2,Fijo,Presupuestado
+18/3/2026,03-18-6172,Impuestos,Afip,"$330,000.00",pendiente,Mp4,Fijo,Presupuestado
+21/3/2026,03-21-7900,Sueldos,Johana Zamudio,"$250,000.00",Pendiente,Mp7,Variable,Presupuestado
+21/3/2026,03-21-8251,Sueldos,Leandro Mercado,"$250,000.00",Pendiente,Mp7,Variable,Presupuestado
+21/3/2026,03-21-8236,Sueldos,Facundo Fredes,"$140,000.00",Pendiente,Mp7,Variable,Presupuestado
+21/3/2026,03-21-6705,Sueldos,Romina Mercado,"$136,000.00",Pendiente,Mp7,Variable,Presupuestado
+23/3/2026,03-23-4887,Herramientas,Metricool,"$130,000.00",pendiente,Mp2,Fijo,Presupuestado
+26/3/2026,03-26-6060,Herramientas,Photoshop,"$11,272.00",pendiente,Mp2,Fijo,Presupuestado
+27/3/2026,03-27-5590,Herramientas,Zapier SA,"$45,000.00",pendiente,Mp2,Fijo,Presupuestado
+28/3/2026,03-28-3205,Sueldos,Johana Zamudio,"$250,000.00",Pendiente,Mp7,Variable,Presupuestado
+28/3/2026,03-28-1531,Sueldos,Leandro Mercado,"$250,000.00",Pendiente,Mp7,Variable,Presupuestado
+28/3/2026,03-28-3908,Sueldos,Facundo Fredes,"$140,000.00",Pendiente,Mp7,Variable,Presupuestado
+28/3/2026,03-28-9875,Sueldos,Romina Mercado,"$136,000.00",Pendiente,Mp7,Variable,Presupuestado
+31/3/2026,03-31-1142,Herramientas,Alegra,"$7,300.00",pendiente,Mp2,Fijo,Presupuestado

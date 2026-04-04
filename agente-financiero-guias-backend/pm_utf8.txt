@@ -1,0 +1,6 @@
+ID: pm_efectivo, Name: Efectivo, Type: cash
+ID: pm_transferencia, Name: Transferencia, Type: transfer
+ID: pm_mp, Name: Mercado Pago, Type: transfer
+ID: pm_debito, Name: Débito, Type: debit_card
+ID: pm_credito, Name: Crédito 1 cuota, Type: credit_card
+ID: pm_financiacion, Name: Financiación, Type: financing
