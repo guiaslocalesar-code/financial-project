@@ -40,15 +40,15 @@ class Commission(Base):
     __tablename__ = "commissions"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=True) # Optional in some schemas
-    transaction_id: Mapped[uuid.UUID] = mapped_column("income_transaction_id", ForeignKey("transactions.id"), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=True) 
+    transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id"), nullable=False)
     commission_rule_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_rules.id"), nullable=True)
     recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
     client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=True)
     service_id: Mapped[str] = mapped_column(ForeignKey("services.id"), nullable=True)
     
     base_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=True)
-    amount: Mapped[float] = mapped_column("commission_amount", Numeric(12, 2), nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     
     status: Mapped[CommissionStatus] = mapped_column(SQLEnum(CommissionStatus, name="commissionstatus", create_type=False), default=CommissionStatus.PENDING)
     payment_transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id"), nullable=True)

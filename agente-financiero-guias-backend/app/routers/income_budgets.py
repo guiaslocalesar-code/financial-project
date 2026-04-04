@@ -68,13 +68,13 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
         except ValueError:
             pass
 
-    # Read fiscal data from the budget
-    requires_invoice = getattr(budget, 'requires_invoice', False)
-    iva_rate = float(getattr(budget, 'iva_rate', 0.0))
-    iva_amount = float(getattr(budget, 'iva_amount', 0.0))
+    # Read fiscal data from the budget (now available in the model)
+    requires_invoice = budget.requires_invoice
+    iva_rate = float(budget.iva_rate)
+    iva_amount = float(budget.iva_amount)
 
     # --- STEP 1: Create INCOME Transaction ---
-    transaction_kwargs = dict(
+    transaction = Transaction(
         company_id=budget.company_id,
         client_id=budget.client_id,
         income_budget_id=budget.id,
@@ -85,16 +85,10 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
         payment_method_id=collect_in.payment_method_id,
         description=f"Cobro presupuesto - {'Blanco (Facturado)' if requires_invoice else 'Negro (Sin Factura)'}",
         transaction_date=tx_date,
+        requires_invoice=requires_invoice,
+        iva_rate=iva_rate,
+        iva_amount=iva_amount
     )
-    # Add fiscal fields if the columns exist in the model
-    if hasattr(Transaction, 'requires_invoice'):
-        transaction_kwargs['requires_invoice'] = requires_invoice
-    if hasattr(Transaction, 'iva_rate'):
-        transaction_kwargs['iva_rate'] = iva_rate
-    if hasattr(Transaction, 'iva_amount'):
-        transaction_kwargs['iva_amount'] = iva_amount
-
-    transaction = Transaction(**transaction_kwargs)
     db.add(transaction)
     await db.flush()  # Get transaction.id
 
@@ -123,6 +117,7 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
             percentage = float(rule.percentage)
             comm_amount = (commission_base * percentage) / 100
             new_comm = Commission(
+                company_id=budget.company_id,
                 transaction_id=transaction.id,
                 recipient_id=rule.recipient_id,
                 amount=comm_amount,

@@ -26,6 +26,12 @@ class Transaction(Base):
     exchange_rate: Mapped[float] = mapped_column(Numeric(10, 4), default=1.0)
     payment_method: Mapped[PaymentMethod] = mapped_column(SQLEnum(PaymentMethod, name="paymentmethod"), nullable=True)
     description: Mapped[str] = mapped_column(String, nullable=True)
+    
+    # Fiscal fields
+    requires_invoice: Mapped[bool] = mapped_column(Boolean, default=False)
+    iva_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0.0)
+    iva_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
+    
     transaction_date: Mapped[date] = mapped_column(Date, default=func.current_date(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

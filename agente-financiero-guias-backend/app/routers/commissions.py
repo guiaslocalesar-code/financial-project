@@ -273,6 +273,17 @@ async def generate_commissions(company_id: UUID, db: AsyncSession = Depends(get_
     created = await commission_service.generate_commissions(company_id, db)
     return {"message": "Commissions generated successfully", "count": created}
 
+@router.post("/bulk-pay")
+async def bulk_pay_commissions(
+    payload: BulkPayPayload,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        results = await commission_service.bulk_pay_commissions(payload, db)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/{commission_id}/pay", response_model=CommissionResponse)
 async def pay_commission(
     commission_id: UUID, 
@@ -295,16 +306,5 @@ async def pay_commission(
                 setattr(commission, "service_name", commission.transaction.service.name or commission.transaction.service.nombre)
                 
         return commission
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/bulk-pay")
-async def bulk_pay_commissions(
-    payload: BulkPayPayload,
-    db: AsyncSession = Depends(get_db)
-):
-    try:
-        results = await commission_service.bulk_pay_commissions(payload, db)
-        return results
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
