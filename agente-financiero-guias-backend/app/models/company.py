@@ -18,7 +18,11 @@ class Company(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
+<<<<<<< HEAD
     imagen: Mapped[str | None] = mapped_column("imagen", Text, nullable=True)
+=======
+    imagen: Mapped[str | None] = mapped_column(Text, nullable=True)
+>>>>>>> financial-project/main
 
     # Relationships
     clients = relationship("Client", back_populates="company")

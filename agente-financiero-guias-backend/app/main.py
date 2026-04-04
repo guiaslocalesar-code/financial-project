@@ -1,7 +1,10 @@
+<<<<<<< HEAD
 import inspect
 if not hasattr(inspect, 'getargspec'):
     inspect.getargspec = inspect.getfullargspec
 
+=======
+>>>>>>> financial-project/main
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -20,7 +23,10 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     openapi_url="/openapi.json",
+<<<<<<< HEAD
     redirect_slashes=False,
+=======
+>>>>>>> financial-project/main
 )
 
 # CORS configuration

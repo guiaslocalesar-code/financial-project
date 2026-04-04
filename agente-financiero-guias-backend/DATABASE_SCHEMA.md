@@ -21,6 +21,7 @@
 ### Columnas
 
 | Columna | Tipo | Nulo | Default | Descripción |
+<<<<<<< HEAD
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `name` | VARCHAR(255) | ❌ | — | Razón social de la empresa |
@@ -30,6 +31,16 @@
 | `afip_key` | TEXT | ✅ | NULL | Clave privada AFIP (encriptada) |
 | `afip_point_of_sale` | INTEGER | ✅ | NULL | Número de punto de venta habilitado en AFIP |
 | `imagen` | TEXT | ✅ | NULL | URL de la imagen/logo de la empresa |
+=======
+|--| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `name` | VARCHAR(255) | ❌ | — | Razón social de la empresa |
+| `cuit` | VARCHAR(13) | ❌ | — | CUIT único de la empresa |
+| `fiscal_condition` | ENUM | ❌ | — | Condición fiscal: `RI`, `monotributo`, `exento` |
+| `imagen` | TEXT | ✅ | NULL | URL Logo de la empresa |
+| `afip_cert` | TEXT | ✅ | NULL | Certificado AFIP (encriptado con Fernet) |
+| `afip_key` | TEXT | ✅ | NULL | Clave privada AFIP (encriptada) |
+| `afip_point_of_sale` | INTEGER | ✅ | NULL | Número de punto de venta habilitado en AFIP |
+>>>>>>> financial-project/main
 | `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
@@ -43,12 +54,15 @@
 - **1 Company → N ExpenseBudgets** (`expense_budgets.company_id`)
 - **1 Company → N IncomeBudgets** (`income_budgets.company_id`)
 - **1 Company → N Transactions** (`transactions.company_id`)
+<<<<<<< HEAD
 - **1 Company → N PaymentMethods** (`payment_methods.company_id`)
 - **1 Company → N Debts** (`debts.company_id`)
 - **1 Company → N UserCompanies** (`user_companies.company_id`)
 - **1 Company → N CommissionRecipients** (`commission_recipients.company_id`)
 - **1 Company → N CommissionRules** (`commission_rules.company_id`)
 - **1 Company → N Commissions** (`commissions.company_id`)
+=======
+>>>>>>> financial-project/main
 
 ---
 
@@ -59,11 +73,19 @@
 
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
+<<<<<<< HEAD
 | `id` | VARCHAR(50) | ❌ | — | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `name` | VARCHAR(255) | ❌ | — | Razón social o nombre del cliente |
 | `customer_name` | VARCHAR(255) | ✅ | NULL | Nombre completo del cliente (ej: "Juan García") |
 | `customer_alias` | VARCHAR(100) | ✅ | NULL | Nombre corto o apodo (ej: "Juancho") |
+=======
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `name` | VARCHAR(255) | ❌ | — | Razón social o nombre del cliente |
+| `customer_name` | VARCHAR(255) | ✅ | — | Nombre de fantasía (opcional) |
+| `customer_alias` | VARCHAR(100) | ✅ | — | Alias interno |
+>>>>>>> financial-project/main
 | `cuit_cuil_dni` | VARCHAR(20) | ❌ | — | Documento fiscal (CUIT, CUIL o DNI validado) |
 | `fiscal_condition` | ENUM | ❌ | — | Condición: `RI`, `monotributo`, `consumidor_final`, `exento` |
 | `email` | VARCHAR(255) | ✅ | NULL | Email de contacto |
@@ -72,11 +94,16 @@
 | `city` | VARCHAR(100) | ✅ | NULL | Ciudad |
 | `province` | VARCHAR(100) | ✅ | NULL | Provincia |
 | `zip_code` | VARCHAR(10) | ✅ | NULL | Código postal |
+<<<<<<< HEAD
 | `imagen` | TEXT | ✅ | NULL | URL de la imagen/logo del cliente (AppSheet) |
+=======
+| `imagen` | TEXT | ✅ | NULL | URL Logo del cliente |
+>>>>>>> financial-project/main
 | `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N Clients → 1 Company** (`company_id` FK)
 - **1 Client → N ClientServices** (`client_services.client_id`)
@@ -91,6 +118,8 @@
 | `RI` | `consumidor_final` o `monotributo` | **Factura B** |
 | `monotributo` | cualquiera | **Factura C** |
 
+=======
+>>>>>>> financial-project/main
 ---
 
 ## 🛠️ TABLA 3: `services`
@@ -100,7 +129,11 @@
 
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
+<<<<<<< HEAD
 | `id` | VARCHAR(50) | ❌ | — | Primary Key |
+=======
+| `id` | UUID | ❌ | `uuid4()` | Primary Key |
+>>>>>>> financial-project/main
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `name` | VARCHAR(100) | ❌ | — | Nombre del servicio (ej: "Manejo de Redes", "Google Ads") |
 | `description` | TEXT | ✅ | NULL | Descripción detallada del servicio |
@@ -108,6 +141,7 @@
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N Services → 1 Company** (`company_id` FK)
 - **1 Service → N ClientServices** (`client_services.service_id`)
@@ -115,6 +149,8 @@
 - **1 Service → N IncomeBudgets** (`income_budgets.service_id`)
 - **1 Service → N Transactions** (`transactions.service_id`)
 
+=======
+>>>>>>> financial-project/main
 ---
 
 ## 🔗 TABLA 4: `client_services`
@@ -125,13 +161,19 @@
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
+<<<<<<< HEAD
 | `client_id` | VARCHAR(50) | ❌ | — | FK → `clients.id` |
 | `service_id` | VARCHAR(50) | ❌ | — | FK → `services.id` |
+=======
+| `client_id` | UUID | ❌ | — | FK → `clients.id` |
+| `service_id` | UUID | ❌ | — | FK → `services.id` |
+>>>>>>> financial-project/main
 | `monthly_fee` | NUMERIC(12,2) | ❌ | — | Precio mensual acordado con este cliente |
 | `currency` | VARCHAR(3) | ❌ | `ARS` | Moneda del precio |
 | `start_date` | DATE | ❌ | — | Fecha de inicio del contrato |
 | `end_date` | DATE | ✅ | NULL | Fecha de fin (NULL = sigue activo) |
 | `status` | ENUM | ❌ | `active` | Estado: `active`, `paused`, `cancelled` |
+<<<<<<< HEAD
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
@@ -142,6 +184,11 @@
 - **N ClientServices → 1 Client** (`client_id` FK)
 - **N ClientServices → 1 Service** (`service_id` FK)
 
+=======
+| `created_at" | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+>>>>>>> financial-project/main
 ---
 
 ## 🧾 TABLA 5: `invoices`
@@ -153,7 +200,11 @@
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
+<<<<<<< HEAD
 | `client_id` | VARCHAR(50) | ❌ | — | FK → `clients.id` |
+=======
+| `client_id` | UUID | ❌ | — | FK → `clients.id` |
+>>>>>>> financial-project/main
 | `invoice_type` | ENUM | ❌ | — | Tipo: `A`, `B`, `C` |
 | `invoice_number` | VARCHAR(20) | ✅ | NULL | Número generado por AFIP (ej: `0001-00000001`) |
 | `point_of_sale` | INTEGER | ❌ | — | Punto de venta habilitado |
@@ -173,6 +224,7 @@
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N Invoices → 1 Company** (`company_id` FK)
 - **N Invoices → 1 Client** (`client_id` FK)
@@ -186,6 +238,8 @@ draft → cancelled
 emitted → cancelled
 ```
 
+=======
+>>>>>>> financial-project/main
 ---
 
 ## 📝 TABLA 6: `invoice_items`
@@ -196,8 +250,13 @@ emitted → cancelled
 | Columna | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
+<<<<<<< HEAD
 | `invoice_id` | UUID | ❌ | — | FK → `invoices.id` |
 | `service_id` | VARCHAR(50) | ✅ | NULL | FK → `services.id` (opcional, para métricas) |
+=======
+| `invoice_id" | UUID | ❌ | — | FK → `invoices.id` |
+| `service_id` | UUID | ✅ | NULL | FK → `services.id` (opcional, para métricas) |
+>>>>>>> financial-project/main
 | `description` | TEXT | ❌ | — | Descripción del ítem (ej: "Manejo Redes Enero 2025") |
 | `quantity` | NUMERIC(10,2) | ❌ | `1` | Cantidad |
 | `unit_price` | NUMERIC(12,2) | ❌ | — | Precio unitario |
@@ -205,10 +264,13 @@ emitted → cancelled
 | `subtotal` | NUMERIC(12,2) | ❌ | — | `quantity × unit_price` (calculado) |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N InvoiceItems → 1 Invoice** (`invoice_id` FK)
 - **N InvoiceItems → 1 Service** (`service_id` FK, nullable)
 
+=======
+>>>>>>> financial-project/main
 ---
 
 ## 🗂️ TABLA 7: `expense_types`
@@ -226,12 +288,15 @@ emitted → cancelled
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N ExpenseTypes → 1 Company** (`company_id` FK)
 - **1 ExpenseType → N ExpenseCategories** (`expense_categories.expense_type_id`)
 - **1 ExpenseType → N ExpenseBudgets** (`expense_budgets.expense_type_id`)
 - **1 ExpenseType → N Transactions** (`transactions.expense_type_id`)
 
+=======
+>>>>>>> financial-project/main
 ---
 
 ## 🏷️ TABLA 8: `expense_categories`
@@ -246,6 +311,7 @@ emitted → cancelled
 | `expense_type_id` | UUID | ❌ | — | FK → `expense_types.id` |
 | `name` | VARCHAR(100) | ❌ | — | Nombre de la categoría (ej: "Alquiler oficina") |
 | `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
+<<<<<<< HEAD
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
@@ -255,6 +321,11 @@ emitted → cancelled
 - **1 ExpenseCategory → N ExpenseBudgets** (`expense_budgets.expense_category_id`)
 - **1 ExpenseCategory → N Transactions** (`transactions.expense_category_id`)
 
+=======
+| `created_at" | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+>>>>>>> financial-project/main
 ---
 
 ## 📅 TABLA 9: `expense_budgets`
@@ -268,6 +339,10 @@ emitted → cancelled
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
 | `expense_type_id` | UUID | ❌ | — | FK → `expense_types.id` |
 | `expense_category_id` | UUID | ❌ | — | FK → `expense_categories.id` |
+<<<<<<< HEAD
+=======
+| `debt_id` | UUID | ✅ | NULL | FK → `debts.id` (si el gasto es cuota de deuda) |
+>>>>>>> financial-project/main
 | `description` | TEXT | ❌ | — | Descripción del gasto planificado |
 | `budgeted_amount` | NUMERIC(12,2) | ❌ | — | Monto presupuestado originalmente |
 | `actual_amount` | NUMERIC(12,2) | ✅ | NULL | Monto real pagado (puede diferir del presupuestado) |
@@ -277,6 +352,7 @@ emitted → cancelled
 | `is_recurring` | BOOLEAN | ❌ | `false` | Si `true`, se clona automáticamente cada mes |
 | `status` | ENUM | ❌ | `pending` | Estado: `pending`, `paid`, `cancelled` |
 | `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (se llena al pagar) |
+<<<<<<< HEAD
 | `debt_id` | UUID | ✅ | NULL | FK → `debts.id` (si el gasto corresponde a una cuota de deuda) |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
@@ -297,6 +373,11 @@ pending → cancelled
 ### Lógica de recurrentes
 Todos los registros con `is_recurring = true` al cierre de cada mes generan copias para el período siguiente con `status = pending`, copiando el `budgeted_amount` y avanzando `planned_date` un mes.
 
+=======
+| `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
+| `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
+
+>>>>>>> financial-project/main
 ---
 
 ## 📅 TABLA 10: `income_budgets`
@@ -308,13 +389,22 @@ Todos los registros con `is_recurring = true` al cierre de cada mes generan copi
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
+<<<<<<< HEAD
 | `client_id` | VARCHAR(50) | ❌ | — | FK → `clients.id` |
 | `service_id` | VARCHAR(50) | ❌ | — | FK → `services.id` |
+=======
+| `client_id` | UUID | ❌ | — | FK → `clients.id` |
+| `service_id` | UUID | ❌ | — | FK → `services.id` |
+>>>>>>> financial-project/main
 | `budgeted_amount` | NUMERIC(12,2) | ❌ | — | Monto original a cobrar |
 | `actual_amount` | NUMERIC(12,2) | ✅ | NULL | Monto real cobrado |
 | `planned_date` | DATE | ❌ | — | Fecha estimada de cobro |
 | `period_month` | INTEGER | ❌ | — | Mes del período |
+<<<<<<< HEAD
 | `period_year` | INTEGER | ❌ | — | Año del período |
+=======
+| `period_year" | INTEGER | ❌ | — | Año del período |
+>>>>>>> financial-project/main
 | `is_recurring` | BOOLEAN | ❌ | `true` | Si `true`, se clona para el próximo mes |
 | `status` | ENUM | ❌ | `pending` | Estado: `pending`, `collected`, `cancelled` |
 | `transaction_id` | UUID | ✅ | NULL | FK → `transactions.id` (se llena al cobrar) |
@@ -322,6 +412,7 @@ Todos los registros con `is_recurring = true` al cierre de cada mes generan copi
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N IncomeBudgets → 1 Company** (`company_id` FK)
 - **N IncomeBudgets → 1 Client** (`client_id` FK)
@@ -334,6 +425,8 @@ pending → [POST /income-budgets/{id}/collect] → collected  (crea Transaction
 pending → cancelled
 ```
 
+=======
+>>>>>>> financial-project/main
 ---
 
 ## 💰 TABLA 11: `transactions`
@@ -345,11 +438,19 @@ pending → cancelled
 |---|---|---|---|---|
 | `id` | UUID | ❌ | `uuid4()` | Primary Key |
 | `company_id` | UUID | ❌ | — | FK → `companies.id` |
+<<<<<<< HEAD
 | `client_id` | VARCHAR(50) | ✅ | NULL | FK → `clients.id` (solo en ingresos) |
 | `invoice_id` | UUID | ✅ | NULL | FK → `invoices.id` (si el ingreso viene de una factura) |
 | `budget_id` | UUID | ✅ | NULL | FK → `expense_budgets.id` (si el egreso vino del presupuesto) |
 | `income_budget_id` | UUID | ✅ | NULL | FK → `income_budgets.id` (si el ingreso vino de cobranza presupuestada) |
 | `service_id` | VARCHAR(50) | ✅ | NULL | FK → `services.id` (para métricas de rentabilidad) |
+=======
+| `client_id` | UUID | ✅ | NULL | FK → `clients.id` (solo en ingresos) |
+| `invoice_id` | UUID | ✅ | NULL | FK → `invoices.id` (si el ingreso viene de una factura) |
+| `budget_id` | UUID | ✅ | NULL | FK → `expense_budgets.id` (si el egreso vino del presupuesto) |
+| `income_budget_id` | UUID | ✅ | NULL | FK → `income_budgets.id` (si el ingreso vino de cobranza presupuestada) |
+| `service_id` | UUID | ✅ | NULL | FK → `services.id` (para métricas de rentabilidad) |
+>>>>>>> financial-project/main
 | `expense_type_id` | UUID | ✅ | NULL | FK → `expense_types.id` (solo en egresos) |
 | `expense_category_id` | UUID | ✅ | NULL | FK → `expense_categories.id` (solo en egresos) |
 | `type` | ENUM | ❌ | — | Tipo: `income`, `expense` |
@@ -358,13 +459,19 @@ pending → cancelled
 | `amount` | NUMERIC(12,2) | ❌ | — | Monto real de la transacción |
 | `currency` | VARCHAR(3) | ❌ | `ARS` | Moneda |
 | `exchange_rate` | NUMERIC(10,4) | ❌ | `1` | Tipo de cambio |
+<<<<<<< HEAD
 | `payment_method` | ENUM | ✅ | NULL | Medio de pago (legacy/simple): `cash`, `transfer`, `check`, `card`, `other` |
 | `payment_method_id` | VARCHAR(50) | ✅ | NULL | FK → `payment_methods.id` (detalle completo) |
+=======
+| `payment_method` | ENUM | ✅ | NULL | Método: `cash`, `transfer`, `check`, `card`, `other` (legacy) |
+| `payment_method_id` | UUID | ✅ | NULL | FK → `payment_methods.id` (nuevo sistema) |
+>>>>>>> financial-project/main
 | `description` | TEXT | ✅ | NULL | Descripción del movimiento |
 | `transaction_date` | DATE | ❌ | `current_date` | Fecha real del movimiento de dinero |
 | `created_at` | TIMESTAMP | ❌ | `now()` | Fecha de creación del registro |
 | `updated_at` | TIMESTAMP | ❌ | `now()` | Última actualización |
 
+<<<<<<< HEAD
 ### Relaciones
 - **N Transactions → 1 Company** (`company_id` FK)
 - **N Transactions → 1 Client** (`client_id` FK, nullable)
@@ -612,6 +719,109 @@ pending → cancelled
 
 ```
 companies (1)
+=======
+---
+
+## 💳 TABLA 12: `payment_methods`
+**Propósito:** Catálogo de cuentas bancarias, cajas o tarjetas desde donde se mueve el dinero.
+
+### Columnas
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `name` | VARCHAR(100) | ❌ | — | Nombre (Ej: "Galicia 1234", "Caja Pesos") |
+| `type" | ENUM | ❌ | — | `bank`, `cash`, `card`, `other` |
+| `bank` | VARCHAR(100) | ✅ | — | Nombre del banco |
+| `is_credit` | BOOLEAN | ❌ | `false` | Si aplica cierre/vencimiento |
+| `closing_day` | INTEGER | ✅ | — | Día de cierre (tarjetas) |
+| `due_day` | INTEGER | ✅ | — | Día de vencimiento (tarjetas) |
+| `is_active` | BOOLEAN | ❌ | `true` | Baja lógica |
+| `created_at` | TIMESTAMP | ❌ | `now()` | — |
+
+---
+
+## 📉 TABLA 13: `debts` (Pasivos)
+**Propósito:** Registro de deudas a largo plazo o préstamos (ej: Préstamo Banco, Deuda con Socio).
+
+### Columnas
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `transaction_id` | UUID | ✅ | NULL | FK inicial (ingreso por préstamo) |
+| `payment_method_id` | UUID | ✅ | NULL | Cuenta destino del préstamo |
+| `description` | TEXT | ❌ | — | Concepto |
+| `original_amount` | NUMERIC | ❌ | — | Capital inicial |
+| `interest_type` | ENUM | ✅ | — | `fixed`, `variable` |
+| `interest_rate` | NUMERIC | ✅ | — | TNA/TEM |
+| `interest_total` | NUMERIC | ✅ | — | Interés proyectado total |
+| `total_amount` | NUMERIC | ❌ | — | Capital + Interés |
+| `installments` | INTEGER | ❌ | `1` | Cantidad de cuotas |
+| `installment_amount` | NUMERIC | ❌ | — | Valor cuota |
+| `first_due_date` | DATE | ❌ | — | Vencimiento 1ra cuota |
+| `status` | ENUM | ❌ | `pending` | `pending`, `paid`, `cancelled` |
+
+---
+
+## 👥 TABLA 14: `users` & `user_companies`
+**Propósito:** Gestión de usuarios y permisos multi-empresa.
+
+### `users`
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `google_id` | VARCHAR | ✅ | — | ID de Google Auth |
+| `email` | VARCHAR | ❌ | — | Email principal |
+| `name` | VARCHAR | ❌ | — | Nombre completo |
+| `avatar_url` | TEXT | ✅ | — | Imagen perfil |
+
+### `user_companies`
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `user_id` | UUID | ❌ | — | FK → `users.id` |
+| `company_id` | UUID | ❌ | — | FK → `companies.id` |
+| `role` | ENUM | ❌ | `user` | `admin`, `user`, `owner` |
+| `quotaparte` | NUMERIC | ✅ | — | Porcentaje societario (para balances) |
+
+---
+
+## 🤝 TABLAS 15-17: Comisiones
+**Propósito:** Gestión de comisiones para referidores, vendedores o colaboradores por cada ingreso.
+
+### `commission_recipients`
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `name` | VARCHAR | ❌ | — | Nombre del colaborador |
+| `type` | ENUM | ❌ | — | `fixed`, `percentage` (Legacy?) |
+
+### `commission_rules`
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `recipient_id` | UUID | ❌ | — | FK → `recipients` |
+| `client_id` | UUID | ✅ | — | Aplicar solo a este cliente |
+| `service_id` | UUID | ✅ | — | Aplicar solo a este servicio |
+| `percentage` | NUMERIC | ❌ | — | % a pagar |
+
+### `commissions` (Transacciones de comisión)
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | UUID | ❌ | `uuid4()` | PK |
+| `income_transaction_id` | UUID | ❌ | — | FK → `transactions` (el ingreso que la origina) |
+| `commission_amount` | NUMERIC | ❌ | — | $ calculado |
+| `status` | ENUM | ❌ | `pending` | `pending`, `paid` |
+
+---
+
+## 🔄 Diagrama de Relaciones (Actualizado)
+
+```
+companies (1)
+├── users (N) via user_companies
+>>>>>>> financial-project/main
 ├── clients (N)
 │   └── client_services (N) ←→ services (N)
 ├── services (N)
@@ -621,6 +831,7 @@ companies (1)
 ├── expense_types (N)
 │   └── expense_categories (N)
 │       └── expense_budgets (N)
+<<<<<<< HEAD
 │           └── transactions (1) [cuando se paga]
 ├── income_budgets (N)
 │   └── transactions (1) [cuando se cobra]
@@ -643,10 +854,23 @@ companies (1)
     ├── → expense_category (nullable)
     ├── → payment_method (required or nullable)
     └── → debt_installments (nullable)
+=======
+│           ├── debts (cuotas)
+│           └── transactions (1) [pago]
+├── income_budgets (N)
+│   └── transactions (1) [cobro]
+├── payment_methods (N)
+│   └── transactions (N)
+├── debts (N)
+│   └── debt_installments (N)
+└── transactions (N)
+    └── commissions (N)
+>>>>>>> financial-project/main
 ```
 
 ---
 
+<<<<<<< HEAD
 ## 🔗 ENUMs Disponibles
 
 | ENUM | Valores |
@@ -677,6 +901,10 @@ companies (1)
 | POST | `/companies/` | `companies` |
 | GET/PUT | `/companies/{id}` | `companies` |
 | POST | `/clients/` | `clients` |
+=======
+*Actualizado: 2026-03-16 | Proyecto: `aplicacion-financiera-guias-42` (GCP)*
+`clients` |
+>>>>>>> financial-project/main
 | GET | `/clients/` | `clients` |
 | POST | `/services/` | `services` |
 | POST | `/client-services/{client_id}` | `client_services` |
@@ -691,6 +919,7 @@ companies (1)
 | GET | `/transactions/` | `transactions` |
 | GET | `/dashboard/summary` | `transactions`, `expense_budgets` |
 | GET | `/dashboard/profitability` | `invoice_items`, `transactions` |
+<<<<<<< HEAD
 | GET | `/payment-methods/` | `payment_methods` |
 | POST | `/debts/` | `debts`, `debt_installments`, `expense_budgets` |
 | GET | `/debts/` | `debts` |
@@ -716,3 +945,9 @@ companies (1)
 ---
 
 *Generado: 2026-03-14 | Actualizado: 2026-03-14 (sistema de comisiones) | Proyecto: `aplicacion-financiera-guias-42` (GCP)*
+=======
+
+---
+
+*Generado: 2026-03-08 | Proyecto: `aplicacion-financiera-guias-42` (GCP)*
+>>>>>>> financial-project/main

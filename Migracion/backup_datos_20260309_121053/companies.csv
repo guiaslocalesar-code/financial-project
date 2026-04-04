@@ -1,2 +1,0 @@
-id,name,cuit,fiscal_condition,afip_cert,afip_key,afip_point_of_sale,is_active,created_at,updated_at
-aeb56588-5e15-4ce2-b24b-065ebf842c44,Agencia Marketing Test,30123456789,RI,,,1,True,2026-03-07 22:09:15.431037,2026-03-07 22:09:15.431037

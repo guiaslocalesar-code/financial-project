@@ -11,13 +11,21 @@ class Commission(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+<<<<<<< HEAD
     income_transaction_id: Mapped[uuid.UUID] = mapped_column("income_transaction_id", ForeignKey("transactions.id"), nullable=False)
+=======
+    income_transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id"), nullable=False)
+>>>>>>> financial-project/main
     commission_rule_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_rules.id"), nullable=True)
     recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("commission_recipients.id"), nullable=False)
     client_id: Mapped[str] = mapped_column(String(50), nullable=False)
     service_id: Mapped[str] = mapped_column(String(50), nullable=False)
     base_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+<<<<<<< HEAD
     commission_amount: Mapped[float] = mapped_column("commission_amount", Numeric(12, 2), nullable=False)
+=======
+    commission_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+>>>>>>> financial-project/main
     status: Mapped[CommissionStatus] = mapped_column(
         SQLEnum(CommissionStatus, name="commissionstatus"), default=CommissionStatus.PENDING
     )

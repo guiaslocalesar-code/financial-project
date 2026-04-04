@@ -1,5 +1,0 @@
-﻿EXISTING: ['alembic_version', 'alternative_cuits', 'client_services', 'clients', 'commission_recipients', 'commission_rules', 'commissions', 'companies', 'debt_installments', 'debts', 'expense_budgets', 'expense_categories', 'expense_types', 'income_budgets', 'invoice_items', 'invoices', 'payment_methods', 'services', 'transactions', 'user_companies', 'users']
-MISSING: []
-PAYMENT_METHODS: ['TRANSFER', 'CASH']
-COMMISSIONS_COUNT: 880
-DEBTS_COUNT: 11

@@ -1,1 +1,0 @@
-id,company_id,client_id,invoice_type,invoice_number,point_of_sale,cae,cae_expiry,issue_date,due_date,subtotal,iva_rate,iva_amount,total,currency,exchange_rate,status,afip_raw_response,notes,created_at,updated_at

@@ -1,4 +1,5 @@
 __pycache__/
+<<<<<<< HEAD
 *.pyc
 *.pyo
 *.pyd
@@ -18,3 +19,34 @@ afip_certs/
 instance/
 .idea/
 .vscode/
+=======
+*.py[cod]
+*$py.class
+.env
+.venv
+venv/
+ENV/
+env/
+.vscode/
+.idea/
+*.log
+*.bak
+*.swp
+node_modules/
+dist/
+build/
+.DS_Store
+# Specific JSON ignores
+current_db_schema.json
+agent_*.json
+scratch_*.json
+
+# Allow essential files
+!requirements.txt
+!vercel.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!next.config.js
+!app/**/*.json
+>>>>>>> financial-project/main
