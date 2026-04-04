@@ -16,3 +16,4 @@ pytest-asyncio
 python-multipart
 fernet
 google-cloud-storage
+python-dateutil

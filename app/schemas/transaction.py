@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime, date
-from app.utils.enums import TransactionType, ExpenseOrigin, PaymentMethod
+from app.utils.enums import TransactionType, ExpenseOrigin
 
 class TransactionBase(BaseModel):
     company_id: UUID
@@ -20,7 +20,7 @@ class TransactionBase(BaseModel):
     amount: float
     currency: str = "ARS"
     exchange_rate: float = 1.0
-    payment_method: PaymentMethod | None = None
+    payment_method: str | None = None
     description: str | None = None
     transaction_date: date | None = None
 
@@ -32,7 +32,7 @@ class TransactionUpdate(BaseModel):
     requires_invoice: bool | None = None
     iva_rate: float | None = None
     iva_amount: float | None = None
-    payment_method: PaymentMethod | None = None
+    payment_method: str | None = None
     description: str | None = None
     transaction_date: date | None = None
 

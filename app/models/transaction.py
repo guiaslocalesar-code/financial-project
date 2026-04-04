@@ -3,7 +3,7 @@ from datetime import datetime, date
 from sqlalchemy import String, Numeric, Date, DateTime, Boolean, Enum as SQLEnum, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
-from app.utils.enums import TransactionType, ExpenseOrigin, PaymentMethod
+from app.utils.enums import TransactionType, ExpenseOrigin
 
 class Transaction(Base):
     __tablename__ = "transactions"
@@ -26,7 +26,7 @@ class Transaction(Base):
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="ARS")
     exchange_rate: Mapped[float] = mapped_column(Numeric(10, 4), default=1.0)
-    payment_method: Mapped[PaymentMethod] = mapped_column(SQLEnum(PaymentMethod), nullable=True)
+    payment_method: Mapped[str] = mapped_column(String(20), nullable=True)
     payment_method_id: Mapped[str] = mapped_column(ForeignKey("payment_methods.id"), nullable=True)
     description: Mapped[str] = mapped_column(String, nullable=True)
     transaction_date: Mapped[date] = mapped_column(Date, default=func.current_date(), nullable=False)

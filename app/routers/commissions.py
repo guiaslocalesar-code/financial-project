@@ -305,7 +305,7 @@ async def pay_commission_endpoint(
         commission_id=commission_id,
         transaction_id=expense_tx.id,
         amount_paid=float(expense_tx.amount),
-        payment_method=body.payment_method.value,
+        payment_method=body.payment_method,
         payment_date=body.payment_date,
     )
 

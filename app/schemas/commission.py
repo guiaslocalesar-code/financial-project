@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.utils.enums import CommissionStatus, PaymentMethod, RecipientType
+from app.utils.enums import CommissionStatus, RecipientType
 
 
 # ── Commission Recipients ──────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ class CommissionResponse(BaseModel):
 
 class PayCommissionRequest(BaseModel):
     """Body para POST /commissions/{id}/pay"""
-    payment_method: PaymentMethod = PaymentMethod.TRANSFER
+    payment_method: str = "transfer"
     payment_date: date = Field(default_factory=date.today)
     actual_amount: Optional[float] = Field(
         None,

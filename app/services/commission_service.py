@@ -28,7 +28,6 @@ from app.models.transaction import Transaction
 from app.utils.enums import (
     CommissionStatus,
     ExpenseOrigin,
-    PaymentMethod,
     TransactionType,
 )
 
@@ -170,7 +169,7 @@ async def calculate_commissions_for_income(
 async def pay_commission(
     db: AsyncSession,
     commission_id: UUID,
-    payment_method: PaymentMethod,
+    payment_method: str,
     payment_date: date,
     actual_amount: float | None = None,
     payment_method_id: str | None = None,
@@ -238,7 +237,7 @@ async def pay_commission(
         commission_id,
         expense_tx.id,
         final_amount,
-        payment_method.value,
+        payment_method,
     )
     return expense_tx
 
