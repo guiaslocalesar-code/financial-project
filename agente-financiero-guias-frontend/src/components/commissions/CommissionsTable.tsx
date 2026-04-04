@@ -15,9 +15,20 @@ interface Props {
     isLoading: boolean
     onPay?: (commission: Commission) => void
     isHistory?: boolean
+    selectedIds?: string[]
+    onToggleSelect?: (id: string) => void
+    onToggleAll?: (ids: string[]) => void
 }
 
-export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: Props) {
+export function CommissionsTable({ 
+    commissions, 
+    isLoading, 
+    onPay, 
+    isHistory,
+    selectedIds = [],
+    onToggleSelect,
+    onToggleAll
+}: Props) {
     if (isLoading) {
         return (
             <div className="p-12 flex justify-center">
@@ -47,11 +58,23 @@ export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: P
         )
     }
 
+    const allChecked = commissions.length > 0 && selectedIds.length === commissions.length;
+
     return (
         <div className="overflow-x-auto">
             <table className="data-table">
                 <thead>
                     <tr>
+                        {!isHistory && onToggleAll && (
+                            <th className="w-10">
+                                <input 
+                                    type="checkbox" 
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    checked={allChecked}
+                                    onChange={() => onToggleAll(commissions.map(c => c.id))}
+                                />
+                            </th>
+                        )}
                         <th>Beneficiario</th>
                         <th>Contexto (Cliente / Servicio)</th>
                         <th className="text-right">Base Imponible</th>
@@ -72,9 +95,23 @@ export function CommissionsTable({ commissions, isLoading, onPay, isHistory }: P
                         const percentage = comm.commission_percentage ?? (baseAmount > 0 ? (commissionAmount / baseAmount) * 100 : 0);
                         
                         const displayDate = comm.transaction_date || comm.created_at
+                        const isSelected = selectedIds.includes(comm.id);
 
                         return (
-                            <tr key={comm.id} className="hover:bg-gray-50/50 transition-colors group">
+                            <tr key={comm.id} className={clsx(
+                                "transition-colors group",
+                                isSelected ? "bg-blue-50/50" : "hover:bg-gray-50/50"
+                            )}>
+                                {!isHistory && onToggleSelect && (
+                                    <td className="w-10 text-center">
+                                        <input 
+                                            type="checkbox" 
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                            checked={isSelected}
+                                            onChange={() => onToggleSelect(comm.id)}
+                                        />
+                                    </td>
+                                )}
                                 <td className="py-4">
                                     <div className="flex flex-col">
                                         <span className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">

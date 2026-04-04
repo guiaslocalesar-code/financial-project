@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
@@ -7,9 +8,14 @@ import {
     CreateCommissionRule,
     Commission
 } from '@/types/commissions'
+import { startOfMonth, endOfMonth, format } from 'date-fns'
 
 export function useCommissions(companyId?: string) {
     const queryClient = useQueryClient()
+    
+    // Período seleccionado
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
     // Sync effect for external triggers (like 400 errors)
     useEffect(() => {
@@ -21,12 +27,16 @@ export function useCommissions(companyId?: string) {
         return () => window.removeEventListener('refresh-commissions', handleRefresh);
     }, [queryClient])
 
+    // Helper para fechas
+    const startDate = format(startOfMonth(new Date(selectedYear, selectedMonth - 1)), 'yyyy-MM-dd')
+    const endDate = format(endOfMonth(new Date(selectedYear, selectedMonth - 1)), 'yyyy-MM-dd')
+
     // ── Resumen Dashboard ───────────────────────────────────────────────────
     const summaryQuery = useQuery({
-        queryKey: ['commissions-summary', companyId],
+        queryKey: ['commissions-summary', companyId, selectedMonth, selectedYear],
         queryFn: async () => {
             if (!companyId) return null
-            const res = await api.commissions.getSummary(companyId)
+            const res = await api.commissions.getSummary(companyId, startDate, endDate)
             return res.data
         },
         enabled: !!companyId,
@@ -34,12 +44,14 @@ export function useCommissions(companyId?: string) {
 
     // ── Listado de Comisiones (Pendientes/Pagadas) ─────────────────────────
     const commissionsQuery = (status?: string, recipientId?: string) => useQuery({
-        queryKey: ['commissions', companyId, status, recipientId],
+        queryKey: ['commissions', companyId, status, recipientId, selectedMonth, selectedYear],
         queryFn: async () => {
             if (!companyId) return []
             const res = await api.commissions.list({ 
                 company_id: companyId, 
-                recipient_id: recipientId ? recipientId : undefined
+                recipient_id: recipientId ? recipientId : undefined,
+                month: selectedMonth,
+                year: selectedYear
             })
             const allCommissions = res.data;
             if (status) {
@@ -77,10 +89,20 @@ export function useCommissions(companyId?: string) {
 
     // ── Mutaciones ─────────────────────────────────────────────────────────
     
-    // Liquidar (Pagar)
+    // Liquidar (Pagar) individual
     const payMutation = useMutation({
         mutationFn: ({ id, data }: { id: string; data: PayCommissionPayload }) => 
             api.commissions.pay(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['commissions'] })
+            queryClient.invalidateQueries({ queryKey: ['commissions-summary'] })
+        }
+    })
+
+    // Liquidar (Pagar) Masivo
+    const bulkPayMutation = useMutation({
+        mutationFn: (data: { commission_ids: string[]; payment_method: string; payment_method_id?: string; payment_date?: string }) =>
+            api.commissions.bulkPay(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['commissions'] })
             queryClient.invalidateQueries({ queryKey: ['commissions-summary'] })
@@ -152,6 +174,7 @@ export function useCommissions(companyId?: string) {
         rules: rulesQuery.data || [],
         isLoadingRules: rulesQuery.isLoading,
         payMutation,
+        bulkPayMutation,
         generateMutation,
         createRecipient: createRecipientMutation,
         updateRecipient: updateRecipientMutation,
@@ -159,6 +182,10 @@ export function useCommissions(companyId?: string) {
         createRule: createRuleMutation,
         updateRule: updateRuleMutation,
         deleteRule: deleteRuleMutation,
+        selectedMonth,
+        setSelectedMonth,
+        selectedYear,
+        setSelectedYear
     }
 }
 

@@ -175,17 +175,19 @@ export const api = {
     },
     commissions: {
         // Summary & Stats
-        getSummary: (companyId: string, startDate?: string, endDate?: string) => 
-            financeClient.get('/dashboard/commissions-summary', { params: { company_id: companyId, start_date: startDate, end_date: endDate } }),
+        getSummary: (company_id: string, startDate?: string, endDate?: string) => 
+            financeClient.get('/dashboard/commissions-summary', { params: { company_id: company_id, start_date: startDate, end_date: endDate } }),
         getRecipientSummary: (recipientId: string) => financeClient.get(`/commissions/recipient/${recipientId}/summary`),
 
         // Comisiones
-        list: (params: { company_id: string; status?: string; recipient_id?: string }) => 
+        list: (params: { company_id: string; status?: string; recipient_id?: string; month?: number; year?: number }) => 
             financeClient.get('/commissions', { params }),
         pay: (commissionId: string, data: PayCommissionPayload) => 
             financeClient.post(`/commissions/${commissionId}/pay`, data),
-        generate: (companyId: string) => 
-            financeClient.post('/commissions/generate', null, { params: { company_id: companyId } }),
+        bulkPay: (data: { commission_ids: string[]; payment_method: string; payment_method_id?: string; payment_date?: string }) =>
+            financeClient.post('/commissions/bulk-pay', data),
+        generate: (company_id: string) => 
+            financeClient.post('/commissions/generate', null, { params: { company_id: company_id } }),
 
         // CRUD Destinatarios
         listRecipients: (companyId: string) => financeClient.get('/commissions/recipients', { params: { company_id: companyId } }),
