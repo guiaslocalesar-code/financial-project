@@ -10,12 +10,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 cryptography
 git+https://github.com/reingart/pyafipws.git@py3k
-<<<<<<< HEAD
 PySimpleSOAP
 httplib2
 reportlab
-=======
->>>>>>> financial-project/main
 httpx
 pytest
 pytest-asyncio
