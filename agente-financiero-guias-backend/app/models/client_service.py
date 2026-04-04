@@ -9,13 +9,13 @@ class ClientService(Base):
     __tablename__ = "client_services"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=False)
-    service_id: Mapped[str] = mapped_column(ForeignKey("services.id"), nullable=False)
+    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), nullable=False)
+    service_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("services.id"), nullable=False)
     monthly_fee: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="ARS")
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=True)
-    status: Mapped[ServiceStatus] = mapped_column(SQLEnum(ServiceStatus, name="servicestatus"), default=ServiceStatus.ACTIVE)
+    status: Mapped[ServiceStatus] = mapped_column(SQLEnum(ServiceStatus), default=ServiceStatus.ACTIVE)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 

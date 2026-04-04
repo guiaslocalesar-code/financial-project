@@ -1,24 +1,34 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_
 from uuid import UUID
-from datetime import date as date_type, datetime
+from datetime import date
 from app.database import get_db
 from app.models.income_budget import IncomeBudget
-from app.models.transaction import Transaction
-from app.models.commission import Commission, CommissionRule, CommissionRecipient
 from app.models.client import Client
 from app.models.client_service import ClientService
-from app.utils.enums import IncomeBudgetStatus, TransactionType, CommissionStatus, ServiceStatus
+from app.models.transaction import Transaction
+from app.models.invoice import Invoice
+from app.utils.enums import IncomeBudgetStatus, TransactionType, InvoiceStatus, ServiceStatus
 from app.schemas.income_budget import IncomeBudgetCreate, IncomeBudgetUpdate, IncomeBudgetResponse, IncomeBudgetCollect, IncomeSummary, IncomeBudgetGenerate
+from app.services.commission_service import calculate_commissions_for_income
 from typing import List
-from calendar import monthrange
+from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/income-budgets", tags=["Income Budgets"])
+
+
 
 @router.post("", response_model=IncomeBudgetResponse)
 async def create_income_budget(budget_in: IncomeBudgetCreate, db: AsyncSession = Depends(get_db)):
     budget = IncomeBudget(**budget_in.model_dump())
+    if budget.requires_invoice and budget.iva_rate is not None:
+        budget.iva_amount = float(budget.budgeted_amount) * float(budget.iva_rate) / 100.0
+    else:
+        budget.iva_amount = 0.0
     db.add(budget)
     await db.commit()
     await db.refresh(budget)
@@ -32,6 +42,7 @@ async def list_income_budgets(
     status: IncomeBudgetStatus | None = None,
     db: AsyncSession = Depends(get_db)
 ):
+    from datetime import date as date_type
     actual_month = month or date_type.today().month
     actual_year = year or date_type.today().year
 
@@ -56,121 +67,158 @@ async def collect_income_budget(budget_id: UUID, collect_in: IncomeBudgetCollect
     if budget.status == IncomeBudgetStatus.COLLECTED:
         raise HTTPException(status_code=400, detail="Budget already collected")
 
-    # Resolve amount: new field takes priority over legacy field
+    # Resolve amount: support both legacy and new field
     raw_amount = collect_in.actual_amount_collected or collect_in.actual_amount or None
-    final_amount = float(raw_amount) if raw_amount is not None else float(budget.budgeted_amount)
+    
+    # Base amount to calculate taxes if not provided
+    base_to_collect = float(budget.budgeted_amount) + float(budget.iva_amount or 0.0)
+    final_amount = float(raw_amount) if raw_amount is not None else base_to_collect
+
+    # 2. Si requiere factura, emitir factura automáticamente con AFIP
+    invoice_id = None
+    if budget.requires_invoice:
+        from app.models.company import Company
+        from app.models.client import Client
+        company = await db.execute(select(Company).where(Company.id == budget.company_id))
+        company = company.scalar_one_or_none()
+        client_res = await db.execute(select(Client).where(Client.id == budget.client_id))
+        client = client_res.scalar_one_or_none()
+
+        if not company or not client:
+            raise HTTPException(status_code=400, detail="Faltan datos de la empresa o cliente para facturar")
+
+        company_data = {"cuit": getattr(company, "cuit", "30000000000"), "point_of_sale": getattr(company, "afip_point_of_sale", 1)}
+        invoice_data = {"client_cuit": client.cuit_cuil_dni, "invoice_type": "C"} 
+        
+        from app.services.afip_service import afip_service
+        try:
+            # Note: We use the budgeted_amount (NET) for the invoice items
+            afip_res = await afip_service.emit_invoice(
+                company_data, 
+                invoice_data, 
+                items=[{"description": budget.notes or f"Servicio {budget.service_id}", "amount": float(budget.budgeted_amount)}]
+            )
+            if afip_res.get("status") != "success":
+                raise HTTPException(status_code=400, detail="Error en AFIP: No se pudo emitir la factura")
+                
+            from app.models.invoice import Invoice
+            from app.models.invoice_item import InvoiceItem
+            from app.utils.enums import InvoiceType, InvoiceStatus
+            
+            invoice = Invoice(
+                company_id=budget.company_id,
+                client_id=budget.client_id,
+                invoice_type=InvoiceType.C,
+                invoice_number=afip_res["invoice_number"],
+                point_of_sale=company_data["point_of_sale"],
+                cae=afip_res["cae"],
+                cae_expiry=afip_res["cae_expiry"],
+                subtotal=float(budget.budgeted_amount),
+                iva_rate=float(budget.iva_rate or 0),
+                iva_amount=float(budget.iva_amount or 0),
+                total=float(budget.budgeted_amount) + float(budget.iva_amount or 0),
+                status=InvoiceStatus.EMITTED,
+                afip_raw_response=afip_res["raw_response"]
+            )
+            db.add(invoice)
+            await db.flush() 
+            
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                service_id=budget.service_id,
+                description=budget.notes or "Cobro de servicio",
+                quantity=1.0,
+                unit_price=float(budget.budgeted_amount),
+                iva_rate=float(budget.iva_rate or 0),
+                subtotal=float(budget.budgeted_amount)
+            )
+            db.add(item)
+            await db.flush()
+            invoice_id = invoice.id
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"AFIP API Error: {str(e)}")
 
     # Resolve transaction date
-    tx_date = date_type.today()
+    tx_date = date.today()
     if collect_in.transaction_date:
         try:
+            from datetime import datetime
             tx_date = datetime.strptime(collect_in.transaction_date, "%Y-%m-%d").date()
         except ValueError:
             pass
 
-    # Read fiscal data from the budget (now available in the model)
-    requires_invoice = budget.requires_invoice
-    iva_rate = float(budget.iva_rate)
-    iva_amount = float(budget.iva_amount)
-
-    # --- STEP 1: Create INCOME Transaction ---
+    # Create transaction
     transaction = Transaction(
         company_id=budget.company_id,
         client_id=budget.client_id,
+        invoice_id=invoice_id,
         income_budget_id=budget.id,
         service_id=budget.service_id,
         type=TransactionType.INCOME,
         is_budgeted=True,
+        requires_invoice=budget.requires_invoice,
+        iva_rate=budget.iva_rate,
+        iva_amount=budget.iva_amount,
         amount=final_amount,
+        payment_method=collect_in.payment_method,
         payment_method_id=collect_in.payment_method_id,
-        description=f"Cobro presupuesto - {'Blanco (Facturado)' if requires_invoice else 'Negro (Sin Factura)'}",
-        transaction_date=tx_date,
-        requires_invoice=requires_invoice,
-        iva_rate=iva_rate,
-        iva_amount=iva_amount
+        description=f"Cobro presupuesto - {'Blanco' if budget.requires_invoice else 'Negro'}",
+        transaction_date=tx_date
     )
     db.add(transaction)
-    await db.flush()  # Get transaction.id
-
-    # --- STEP 2: Auto-generate commissions (on NET base, not including IVA) ---
-    # The commission base is the NET amount (budgeted_amount), not the total with IVA
-    commission_base = float(budget.budgeted_amount)
-
-    rules_query = select(CommissionRule).join(
-        CommissionRecipient, CommissionRule.recipient_id == CommissionRecipient.id
-    ).where(
-        CommissionRecipient.company_id == budget.company_id
-    )
-    rules_result = await db.execute(rules_query)
-    rules = rules_result.scalars().all()
-
-    for rule in rules:
-        match = False
-        if rule.service_id and budget.service_id and str(rule.service_id) == str(budget.service_id):
-            match = True
-        elif rule.client_id and budget.client_id and str(rule.client_id) == str(budget.client_id):
-            match = True
-        elif not rule.service_id and not rule.client_id:
-            match = True  # Global rule
-
-        if match:
-            percentage = float(rule.percentage)
-            comm_amount = (commission_base * percentage) / 100
-            new_comm = Commission(
-                company_id=budget.company_id,
-                transaction_id=transaction.id,
-                recipient_id=rule.recipient_id,
-                amount=comm_amount,
-                status=CommissionStatus.PENDING
-            )
-            db.add(new_comm)
-
-    # --- STEP 3: Close the budget ---
+    await db.flush() 
+    
     budget.status = IncomeBudgetStatus.COLLECTED
     budget.actual_amount = final_amount
     budget.transaction_id = transaction.id
-
+    
+    # Logic A: Automatic Commissions using advanced service
+    await calculate_commissions_for_income(db, transaction.id)
+    
     await db.commit()
-
     return {
         "status": "success",
-        "message": "Cobro registrado. Comisiones generadas automáticamente sobre el neto.",
-        "data": {
-            "transaction_id": str(transaction.id),
-            "was_invoiced": requires_invoice,
-        }
+        "message": "Income collected and transaction created", 
+        "transaction_id": str(transaction.id),
+        "was_invoiced": budget.requires_invoice
     }
 
 @router.post("/generate")
 async def generate_income_budgets(generate_in: IncomeBudgetGenerate, db: AsyncSession = Depends(get_db)):
+    """
+    Standard generation logic using the frontend's expected schema.
+    """
+    from calendar import monthrange
+    from app.models.client_service import ClientService
+    from app.models.client import Client
+    from app.utils.enums import ServiceStatus
+
     # 1. Fetch all ACTIVE client services for this company
-    query = select(ClientService).join(Client).where(
+    query = select(ClientService, Client).join(Client).where(
         Client.company_id == generate_in.company_id,
+        Client.is_active == True,
         ClientService.status == ServiceStatus.ACTIVE
     )
-    # Date filtering (simple): start_date <= last day of target month
-    # and (end_date is null or end_date >= first day of target month)
-    last_day_of_month = date_type(generate_in.year, generate_in.month, monthrange(generate_in.year, generate_in.month)[1])
-    first_day_of_month = date_type(generate_in.year, generate_in.month, 1)
     
-    query = query.where(
-        ClientService.start_date <= last_day_of_month
-    ).where(
-        (ClientService.end_date == None) | (ClientService.end_date >= first_day_of_month)
-    )
+    # Date filtering
+    last_day_of_month = date(generate_in.year, generate_in.month, monthrange(generate_in.year, generate_in.month)[1])
+    first_day_of_month = date(generate_in.year, generate_in.month, 1)
+    
+    query = query.where(ClientService.start_date <= last_day_of_month)
+    query = query.where((ClientService.end_date == None) | (ClientService.end_date >= first_day_of_month))
 
     result = await db.execute(query)
-    active_services = result.scalars().all()
+    subs = result.all()
 
     created_count = 0
     skipped_count = 0
 
-    for service in active_services:
-        # Check if budget already exists for this client-service-period
+    for cs, client in subs:
+        # Check idempotency
         exists_query = select(IncomeBudget).where(
             IncomeBudget.company_id == generate_in.company_id,
-            IncomeBudget.client_id == service.client_id,
-            IncomeBudget.service_id == service.service_id,
+            IncomeBudget.client_id == client.id,
+            IncomeBudget.service_id == cs.service_id,
             IncomeBudget.period_month == generate_in.month,
             IncomeBudget.period_year == generate_in.year
         )
@@ -179,18 +227,27 @@ async def generate_income_budgets(generate_in: IncomeBudgetGenerate, db: AsyncSe
             skipped_count += 1
             continue
 
+        # Calculate IVA if the client requires invoice
+        budgeted_amount = float(cs.monthly_fee)
+        requires_invoice = client.requires_invoice
+        iva_rate = 21.0 if requires_invoice else 0.0
+        iva_amount = budgeted_amount * iva_rate / 100.0 if requires_invoice else 0.0
+
         # Create new budget
         new_budget = IncomeBudget(
             company_id=generate_in.company_id,
-            client_id=service.client_id,
-            service_id=service.service_id,
-            budgeted_amount=service.monthly_fee,
+            client_id=client.id,
+            service_id=cs.service_id,
+            budgeted_amount=budgeted_amount,
+            requires_invoice=requires_invoice,
+            iva_rate=iva_rate,
+            iva_amount=iva_amount,
             planned_date=first_day_of_month,
             period_month=generate_in.month,
             period_year=generate_in.year,
             is_recurring=True,
             status=IncomeBudgetStatus.PENDING,
-            notes=f"Generado automáticamente basado en abono mensual para {generate_in.month}/{generate_in.year}"
+            notes=f"Mensual {generate_in.month}/{generate_in.year}"
         )
         db.add(new_budget)
         created_count += 1
@@ -201,5 +258,5 @@ async def generate_income_budgets(generate_in: IncomeBudgetGenerate, db: AsyncSe
     return {
         "budgets_created": created_count,
         "budgets_skipped": skipped_count,
-        "message": f"Se generaron {created_count} presupuestos de ingreso para {generate_in.month}/{generate_in.year}. {skipped_count} ya existían y fueron omitidos."
+        "message": f"Se generaron {created_count} presupuestos de ingreso para {generate_in.month}/{generate_in.year}."
     }

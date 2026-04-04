@@ -10,7 +10,10 @@ from app.models.expense_budget import ExpenseBudget
 from app.models.income_budget import IncomeBudget
 from app.models.transaction import Transaction
 from app.models.payment_method import PaymentMethod
-from app.models.user import User
-from app.models.user_company import UserCompany
-from app.models.debt import Debt, DebtInstallment
-from app.models.commission import CommissionRecipient, CommissionRule, Commission
+from app.models.debt import Debt
+from app.models.debt_installment import DebtInstallment
+from app.models.user import User, UserCompany
+from app.models.commission_recipient import CommissionRecipient
+from app.models.commission_rule import CommissionRule
+from app.models.commission import Commission
+from afip_integration.models import AfipToken

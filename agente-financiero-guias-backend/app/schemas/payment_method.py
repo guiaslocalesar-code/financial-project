@@ -1,11 +1,11 @@
 from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 from datetime import datetime
-from app.utils.enums import PaymentMethodType
 
 class PaymentMethodBase(BaseModel):
+    id: str = Field(..., max_length=50) # Manual ID string like 'bank_transfer', 'cash', etc.
     name: str = Field(..., max_length=100)
-    type: str # changed from PaymentMethodType
+    type: str # cash, bank, credit_card, etc.
     bank: str | None = Field(None, max_length=100)
     is_credit: bool = False
     closing_day: int | None = Field(None, ge=1, le=31)
@@ -16,7 +16,7 @@ class PaymentMethodCreate(PaymentMethodBase):
 
 class PaymentMethodUpdate(BaseModel):
     name: str | None = Field(None, max_length=100)
-    type: str | None = None # changed from PaymentMethodType | None
+    type: str | None = None
     bank: str | None = Field(None, max_length=100)
     is_credit: bool | None = None
     closing_day: int | None = Field(None, ge=1, le=31)
@@ -24,7 +24,6 @@ class PaymentMethodUpdate(BaseModel):
     is_active: bool | None = None
 
 class PaymentMethodResponse(PaymentMethodBase):
-    id: str
     company_id: UUID
     is_active: bool
     created_at: datetime

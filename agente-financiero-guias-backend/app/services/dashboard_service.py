@@ -6,93 +6,73 @@ from app.models.transaction import Transaction
 from app.models.invoice_item import InvoiceItem
 from app.models.expense_budget import ExpenseBudget
 from app.models.service import Service
-from app.utils.enums import TransactionType, BudgetStatus
+from app.models.commission import Commission
+from app.models.commission_recipient import CommissionRecipient
+from app.utils.enums import TransactionType, BudgetStatus, CommissionStatus
 
 class DashboardService:
     async def get_summary(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
-        total_income = 0.0
-        total_expenses = 0.0
-        total_commissions = 0.0
-        pending_to_pay = 0.0
-
+        """
+        Returns a financial summary for a date range.
+        Note: The frontend might still send month/year, 
+        so the caller should convert them to first/last day of month.
+        """
         # Total Income
-        try:
-            income_res = await db.execute(
-                select(func.sum(Transaction.amount))
-                .where(
-                    Transaction.company_id == company_id,
-                    Transaction.type == TransactionType.INCOME,
-                    Transaction.transaction_date >= start_date,
-                    Transaction.transaction_date <= end_date
-                )
+        income_res = await db.execute(
+            select(func.sum(Transaction.amount))
+            .where(
+                Transaction.company_id == company_id,
+                Transaction.type == TransactionType.INCOME,
+                Transaction.transaction_date >= start_date,
+                Transaction.transaction_date <= end_date
             )
-            total_income = float(income_res.scalar() or 0.0)
-        except Exception as e:
-            print(f"Error querying income: {e}")
+        )
+        total_income = float(income_res.scalar() or 0.0)
 
-        # Total Expenses
-        try:
-            expense_res = await db.execute(
-                select(func.sum(Transaction.amount))
-                .where(
-                    Transaction.company_id == company_id,
-                    Transaction.type == TransactionType.EXPENSE,
-                    Transaction.transaction_date >= start_date,
-                    Transaction.transaction_date <= end_date
-                )
+        # Total Expenses (Direct transactions)
+        expense_res = await db.execute(
+            select(func.sum(Transaction.amount))
+            .where(
+                Transaction.company_id == company_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.transaction_date >= start_date,
+                Transaction.transaction_date <= end_date
             )
-            total_expenses = float(expense_res.scalar() or 0.0)
-        except Exception as e:
-            print(f"Error querying expenses: {e}")
+        )
+        total_expenses = float(expense_res.scalar() or 0.0)
 
-        # Commissions (added to Total Expenses)
-        try:
-            from app.models.commission import Commission, CommissionRecipient
-            from app.utils.enums import CommissionStatus
-            
-            comm_res = await db.execute(
-                select(func.sum(Commission.amount))
-                .select_from(Commission)
-                .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
-                .where(
-                    CommissionRecipient.company_id == company_id,
-                    Commission.status == CommissionStatus.PAID,
-                    func.cast(Commission.updated_at, date) >= start_date,
-                    func.cast(Commission.updated_at, date) <= end_date
-                )
+        # Pending to Pay (Budgeted expenses not yet paid)
+        # We look for budgets whose period falls within the range
+        pending_res = await db.execute(
+            select(func.sum(ExpenseBudget.budgeted_amount))
+            .where(
+                ExpenseBudget.company_id == company_id,
+                ExpenseBudget.status == BudgetStatus.PENDING,
+                ExpenseBudget.period_year * 12 + ExpenseBudget.period_month >= start_date.year * 12 + start_date.month,
+                ExpenseBudget.period_year * 12 + ExpenseBudget.period_month <= end_date.year * 12 + end_date.month
             )
-            total_commissions = float(comm_res.scalar() or 0.0)
-        except Exception as e:
-            print(f"Error querying commissions: {e}")
+        )
+        pending_to_pay = float(pending_res.scalar() or 0.0)
+
+        # Commissions Summary
+        comm_summary = await self.get_commissions_summary(company_id, start_date, end_date, db)
         
-        total_expenses += total_commissions
-
-        # Pending to Pay
-        try:
-            pending_res = await db.execute(
-                select(func.sum(ExpenseBudget.budgeted_amount))
-                .where(
-                    ExpenseBudget.company_id == company_id,
-                    ExpenseBudget.status == BudgetStatus.PENDING,
-                    ExpenseBudget.period_year * 12 + ExpenseBudget.period_month >= start_date.year * 12 + start_date.month,
-                    ExpenseBudget.period_year * 12 + ExpenseBudget.period_month <= end_date.year * 12 + end_date.month
-                )
-            )
-            pending_to_pay = float(pending_res.scalar() or 0.0)
-        except Exception as e:
-            print(f"Error querying pending: {e}")
+        balance = total_income - total_expenses - comm_summary["total_paid"]
 
         return {
             "total_income": total_income,
             "total_expenses": total_expenses,
-            "balance": total_income - total_expenses,
-            "pending_to_pay": pending_to_pay
+            "total_commissions_pending": comm_summary["total_pending"],
+            "total_commissions_paid": comm_summary["total_paid"],
+            "total_commissions": comm_summary["total_pending"] + comm_summary["total_paid"],
+            "balance": balance,
+            "pending_to_pay": pending_to_pay,
+            "commissions_summary": comm_summary
         }
 
     async def get_profitability(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
+        # 1. Income by service (joining invoices)
         from app.models.invoice import Invoice
-        # Simplified profitability by service
-        # 1. Income by service (using Invoice.issue_date for filtering)
         income_query = select(InvoiceItem.service_id, func.sum(InvoiceItem.subtotal).label("income")) \
             .join(Invoice, InvoiceItem.invoice_id == Invoice.id) \
             .where(
@@ -136,76 +116,60 @@ class DashboardService:
         return profitability
 
     async def get_commissions_summary(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
-        from app.models.commission import Commission, CommissionRecipient
-        from app.utils.enums import CommissionStatus
-
         total_pending = 0.0
         total_paid = 0.0
         recipient_count = 0
         top_recipients = []
 
-        # Total pending: all pending generated up to the end of the selected period
-        try:
-            pending_res = await db.execute(
-                select(func.sum(Commission.amount))
-                .select_from(Commission)
-                .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
-                .where(
-                    CommissionRecipient.company_id == company_id,
-                    Commission.status == CommissionStatus.PENDING,
-                    func.cast(Commission.created_at, date) <= end_date
-                )
+        # Pending
+        pending_res = await db.execute(
+            select(func.sum(Commission.commission_amount))
+            .where(
+                Commission.company_id == company_id,
+                Commission.status == CommissionStatus.PENDING,
+                func.cast(Commission.created_at, date) >= start_date,
+                func.cast(Commission.created_at, date) <= end_date
             )
-            total_pending = float(pending_res.scalar() or 0.0)
-        except Exception as e:
-            print(f"Error querying pending commissions: {e}")
+        )
+        total_pending = float(pending_res.scalar() or 0.0)
 
-        try:
-            paid_res = await db.execute(
-                select(func.sum(Commission.amount))
-                .select_from(Commission)
-                .join(CommissionRecipient, Commission.recipient_id == CommissionRecipient.id)
-                .where(
-                    CommissionRecipient.company_id == company_id,
-                    Commission.status == CommissionStatus.PAID,
-                    func.cast(Commission.updated_at, date) >= start_date,
-                    func.cast(Commission.updated_at, date) <= end_date
-                )
+        # Paid
+        paid_res = await db.execute(
+            select(func.sum(Commission.commission_amount))
+            .where(
+                Commission.company_id == company_id,
+                Commission.status == CommissionStatus.PAID,
+                # For PAID, we might want to filter by update_at or transaction date
+                func.cast(Commission.created_at, date) >= start_date,
+                func.cast(Commission.created_at, date) <= end_date
             )
-            total_paid = float(paid_res.scalar() or 0.0)
-        except Exception as e:
-            print(f"Error querying paid commissions: {e}")
+        )
+        total_paid = float(paid_res.scalar() or 0.0)
 
-        try:
-            recip_res = await db.execute(
-                select(func.count(CommissionRecipient.id))
-                .select_from(CommissionRecipient)
-                .where(CommissionRecipient.company_id == company_id)
-            )
-            recipient_count = int(recip_res.scalar() or 0)
-        except Exception as e:
-            print(f"Error querying recipient count: {e}")
+        # Recipients
+        recip_cnt_res = await db.execute(
+            select(func.count(CommissionRecipient.id))
+            .where(CommissionRecipient.company_id == company_id)
+        )
+        recipient_count = int(recip_cnt_res.scalar() or 0)
 
-        try:
-            top_res = await db.execute(
-                select(
-                    CommissionRecipient.id,
-                    CommissionRecipient.name,
-                    func.sum(Commission.amount).label('total_earned')
-                )
-                .select_from(CommissionRecipient)
-                .join(Commission, Commission.recipient_id == CommissionRecipient.id)
-                .where(CommissionRecipient.company_id == company_id)
-                .group_by(CommissionRecipient.id, CommissionRecipient.name)
-                .order_by(func.sum(Commission.amount).desc())
-                .limit(5)
+        # Top Recipients
+        top_res = await db.execute(
+            select(
+                CommissionRecipient.id,
+                CommissionRecipient.name,
+                func.sum(Commission.commission_amount).label('total_earned')
             )
-            top_recipients = [
-                {"id": str(row.id), "name": row.name, "total_earned": float(row.total_earned)}
-                for row in top_res
-            ]
-        except Exception as e:
-            print(f"Error querying top recipients: {e}")
+            .join(Commission, Commission.recipient_id == CommissionRecipient.id)
+            .where(CommissionRecipient.company_id == company_id)
+            .group_by(CommissionRecipient.id, CommissionRecipient.name)
+            .order_by(func.sum(Commission.commission_amount).desc())
+            .limit(5)
+        )
+        top_recipients = [
+            {"id": str(row.id), "name": row.name, "total_earned": float(row.total_earned)}
+            for row in top_res
+        ]
 
         return {
             "total_pending": total_pending,

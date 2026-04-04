@@ -1,113 +1,161 @@
-from pydantic import BaseModel, ConfigDict, Field
+"""
+schemas/commission.py
+─────────────────────
+Schemas Pydantic para el módulo de comisiones.
+"""
+
+from datetime import date, datetime
+from typing import List, Optional
 from uuid import UUID
-from datetime import datetime, date
 
-class CommissionRuleBase(BaseModel):
-    client_id: str | None = None
-    service_id: str | None = None
-    percentage: float
+from pydantic import BaseModel, Field
 
-class CommissionRuleCreate(CommissionRuleBase):
-    recipient_id: str | UUID
+from app.utils.enums import CommissionStatus, RecipientType
 
-class CommissionRuleUpdate(BaseModel):
-    client_id: str | None = None
-    service_id: str | None = None
-    percentage: float | None = None
 
-class CommissionRuleResponse(CommissionRuleBase):
-    id: str | UUID
-    recipient_id: str | UUID
-    created_at: datetime
-    updated_at: datetime | None = None
-    recipient_name: str | None = None
-    client_name: str | None = None
-    service_name: str | None = None
+# ── Commission Recipients ──────────────────────────────────────────────────────
 
-    model_config = ConfigDict(from_attributes=True)
+class CommissionRecipientCreate(BaseModel):
+    company_id: UUID
+    type: RecipientType
+    name: str
+    cuit: Optional[str] = None
+    email: Optional[str] = None
 
-class CommissionRecipientBase(BaseModel):
-    name: str = Field(..., max_length=255)
-    email: str | None = Field(None, max_length=255)
-    # These fields may not exist in older DB schemas, keep optional
-    cuit: str | None = None
-    is_active: bool | None = None
-    type: str | None = None
-
-class CommissionRecipientCreate(CommissionRecipientBase):
-    company_id: str | UUID
 
 class CommissionRecipientUpdate(BaseModel):
-    name: str | None = None
-    email: str | None = None
-    cuit: str | None = None
-    is_active: bool | None = None
-    type: str | None = None
+    type: Optional[RecipientType] = None
+    name: Optional[str] = None
+    cuit: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
 
-class CommissionRecipientResponse(CommissionRecipientBase):
-    id: str | UUID
-    company_id: str | UUID
+
+class CommissionRecipientResponse(BaseModel):
+    id: UUID
+    company_id: UUID
+    type: RecipientType
+    name: str
+    cuit: Optional[str] = None
+    email: Optional[str] = None
+    is_active: bool
     created_at: datetime
-    updated_at: datetime | None = None
-    rules: list[CommissionRuleResponse] = []
 
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = {"from_attributes": True}
 
-class CommissionBase(BaseModel):
-    transaction_id: str | UUID
-    recipient_id: str | UUID
-    amount: float
-    base_amount: float | None = None
-    commission_percentage: float | None = None
-    status: str = "PENDING"
 
-class CommissionStatusUpdate(BaseModel):
-    status: str
+# ── Commission Rules ───────────────────────────────────────────────────────────
 
-class CommissionResponse(CommissionBase):
-    id: str | UUID
+class CommissionRuleCreate(BaseModel):
+    company_id: UUID
+    recipient_id: UUID
+    client_id: Optional[str] = None
+    service_id: Optional[str] = None
+    percentage: float = Field(..., ge=0, le=100)
+    priority: int = 1
+
+
+class CommissionRuleUpdate(BaseModel):
+    client_id: Optional[str] = None
+    service_id: Optional[str] = None
+    percentage: Optional[float] = Field(None, ge=0, le=100)
+    priority: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class CommissionRuleResponse(BaseModel):
+    id: UUID
+    company_id: UUID
+    recipient_id: UUID
+    client_id: Optional[str] = None
+    service_id: Optional[str] = None
+    percentage: float
+    priority: int
+    is_active: bool
     created_at: datetime
-    updated_at: datetime | None = None
-    recipient_name: str | None = None
-    client_name: str | None = None
-    client_logo: str | None = None
-    service_name: str | None = None
-    transaction_description: str | None = None
-    transaction_date: date | None = None
-    was_invoiced: bool | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = {"from_attributes": True}
 
-class CommissionPay(BaseModel):
+
+# ── Commissions ────────────────────────────────────────────────────────────────
+
+class CommissionResponse(BaseModel):
+    """Comisión con datos enriquecidos del recipient, cliente y servicio."""
+    id: UUID
+    company_id: UUID
+    income_transaction_id: UUID
+    commission_rule_id: Optional[UUID] = None
+    recipient_id: UUID
+    recipient_name: Optional[str] = None          # JOIN desde commission_recipients
+    client_id: str
+    client_name: Optional[str] = None             # JOIN desde clients
+    service_id: str
+    service_name: Optional[str] = None            # JOIN desde services
+    base_amount: float                             # Subtotal sin IVA
+    commission_amount: float
+    status: CommissionStatus
+    payment_transaction_id: Optional[UUID] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PayCommissionRequest(BaseModel):
+    """Body para POST /commissions/{id}/pay"""
+    payment_method: str = "transfer"
+    payment_date: date = Field(default_factory=date.today)
+    actual_amount: Optional[float] = Field(
+        None,
+        description="Si se omite, usa commission_amount. Útil para ajustes.",
+        ge=0,
+    )
+    payment_method_id: Optional[str] = Field(
+        None,
+        description="ID del medio de pago (tabla payment_methods). Opcional.",
+    )
+    description: Optional[str] = None
+
+
+class PayCommissionResponse(BaseModel):
+    """Respuesta al pagar una comisión."""
+    commission_id: UUID
+    transaction_id: UUID
+    amount_paid: float
     payment_method: str
-    payment_method_id: str | UUID | None = None
-    payment_date: date | None = None
-    actual_amount: float | None = None
+    payment_date: date
+    message: str = "Comisión pagada exitosamente"
 
-class BulkPayPayload(BaseModel):
-    commission_ids: list[UUID]
-    payment_method: str
-    payment_method_id: str | UUID | None = None
-    payment_date: date | None = None
 
-class RecipientStats(BaseModel):
-    total_earned: float = 0
-    total_pending: float = 0
-    performance_pct: float = 0
+# ── Generate Report ────────────────────────────────────────────────────────────
 
-class RecipientSummary(CommissionRecipientResponse):
-    stats: RecipientStats
-    commissions: list[CommissionResponse] = []
+class GenerateCommissionsResponse(BaseModel):
+    transactions_procesadas: int
+    comisiones_generadas: int
+    message: str
+
+
+# ── Recipient Summary ──────────────────────────────────────────────────────────
+
+class RecipientSummary(BaseModel):
+    recipient_id: UUID
+    recipient_name: str
+    total_base: float
+    total_pendiente: float
+    total_pagado: float
+    porcentaje_cumplimiento: float
+
+
+# ── Dashboard Widget ───────────────────────────────────────────────────────────
 
 class TopRecipient(BaseModel):
-    id: str | UUID
+    recipient_id: UUID
     name: str
-    total_earned: float
-
-class CommissionsSummary(BaseModel):
-    total_pending: float
-    total_paid: float
-    recipient_count: int
-    top_recipients: list[TopRecipient] = []
+    total_comisiones: float
+    total_pendiente: float
+    total_pagado: float
 
 
+class CommissionsDashboard(BaseModel):
+    total_pendiente: float
+    total_pagado: float
+    top_recipients: List[TopRecipient]

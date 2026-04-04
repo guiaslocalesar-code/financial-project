@@ -9,29 +9,11 @@ class Settings(BaseSettings):
     AFIP_ENV: str = "homo"
     ENCRYPTION_KEY: str
     ALLOWED_ORIGINS: str = "*"
-
-    # Optional Google Auth (to prevent startup crashes)
-    GOOGLE_CLIENT_ID: str | None = None
-    GOOGLE_CLIENT_SECRET: str | None = None
-
-    # Storage Settings
-    STORAGE_BACKEND: str = "local" # local or supabase
-    SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""
-    SUPABASE_BUCKET: str = "logos"
-
-    @property
-    def sync_database_url(self) -> str:
-        # Useful for tools that don't support asyncpg yet (if any)
-        return self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
-
-    @property
-    def async_database_url(self) -> str:
-        # Ensure the URL has the +asyncpg prefix for SQLAlchemy
-        url = self.DATABASE_URL
-        if url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-            return url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return url
+    GCS_BUCKET_NAME: str = "agente-financiero-files" # Default value if not in .env
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    AFIP_FERNET_KEY: str = ""
+    AFIP_ENVIRONMENT: str = "homologacion"
 
     @property
     def cors_origins(self) -> List[str]:
@@ -39,7 +21,5 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
 
 settings = Settings()

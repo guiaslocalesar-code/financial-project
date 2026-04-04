@@ -4,7 +4,7 @@ from datetime import datetime, date
 from app.utils.enums import InvoiceType, InvoiceStatus
 
 class InvoiceItemBase(BaseModel):
-    service_id: str | None = None
+    service_id: UUID | None = None
     description: str
     quantity: float = 1.0
     unit_price: float
@@ -22,7 +22,7 @@ class InvoiceItemResponse(InvoiceItemBase):
 
 class InvoiceBase(BaseModel):
     company_id: UUID
-    client_id: str
+    client_id: UUID
     invoice_type: InvoiceType
     point_of_sale: int
     issue_date: date | None = None

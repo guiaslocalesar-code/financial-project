@@ -19,8 +19,9 @@ class ExpenseBudget(Base):
     period_month: Mapped[int] = mapped_column(Integer, nullable=False)
     period_year: Mapped[int] = mapped_column(Integer, nullable=False)
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
-    status: Mapped[BudgetStatus] = mapped_column(SQLEnum(BudgetStatus, name="budgetstatus"), default=BudgetStatus.PENDING)
+    status: Mapped[BudgetStatus] = mapped_column(SQLEnum(BudgetStatus), default=BudgetStatus.PENDING)
     transaction_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("transactions.id"), nullable=True)
+    debt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("debts.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
@@ -28,4 +29,5 @@ class ExpenseBudget(Base):
     company = relationship("Company", back_populates="expense_budgets")
     expense_type = relationship("ExpenseType", back_populates="budgets")
     category = relationship("ExpenseCategory", back_populates="budgets")
-    transaction = relationship("Transaction", foreign_keys=[transaction_id], overlaps="budget")
+    transaction = relationship("Transaction", foreign_keys=[transaction_id], post_update=True)
+    debt = relationship("Debt")

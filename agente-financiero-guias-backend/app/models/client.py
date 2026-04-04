@@ -8,11 +8,13 @@ from app.utils.enums import FiscalCondition
 class Client(Base):
     __tablename__ = "clients"
 
-    id: Mapped[str] = mapped_column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    customer_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    customer_alias: Mapped[str | None] = mapped_column(String(100), nullable=True)
     cuit_cuil_dni: Mapped[str] = mapped_column(String(20), nullable=False)
-    fiscal_condition: Mapped[FiscalCondition] = mapped_column(SQLEnum(FiscalCondition, name="fiscalcondition"), nullable=False)
+    fiscal_condition: Mapped[FiscalCondition] = mapped_column(SQLEnum(FiscalCondition), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
     phone: Mapped[str] = mapped_column(String(50), nullable=True)
     address: Mapped[str] = mapped_column(Text, nullable=True)
@@ -20,6 +22,7 @@ class Client(Base):
     province: Mapped[str] = mapped_column(String(100), nullable=True)
     zip_code: Mapped[str] = mapped_column(String(10), nullable=True)
     imagen: Mapped[str] = mapped_column(Text, nullable=True)
+    requires_invoice: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

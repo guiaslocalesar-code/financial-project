@@ -1,21 +1,15 @@
 import enum
 
-class CompanyRole(str, enum.Enum):
-    ADMIN = "admin"
-    USER = "user"
-    OWNER = "owner"
-    ACCOUNTANT = "accountant"
-
 class FiscalCondition(str, enum.Enum):
     RI = "RI"
-    MONOTRIBUTO = "MONOTRIBUTO"
-    EXENTO = "EXENTO"
-    CONSUMIDOR_FINAL = "CONSUMIDOR_FINAL"
+    MONOTRIBUTO = "monotributo"
+    EXENTO = "exento"
+    CONSUMIDOR_FINAL = "consumidor_final"
 
 class ServiceStatus(str, enum.Enum):
-    ACTIVE = "ACTIVE"
-    PAUSED = "PAUSED"
-    CANCELLED = "CANCELLED"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    CANCELLED = "cancelled"
 
 class InvoiceType(str, enum.Enum):
     A = "A"
@@ -23,58 +17,46 @@ class InvoiceType(str, enum.Enum):
     C = "C"
 
 class InvoiceStatus(str, enum.Enum):
-    DRAFT = "DRAFT"
-    EMITTED = "EMITTED"
-    CANCELLED = "CANCELLED"
+    DRAFT = "draft"
+    EMITTED = "emitted"
+    CANCELLED = "cancelled"
 
 class AppliesTo(str, enum.Enum):
-    BUDGETED = "BUDGETED"
-    UNBUDGETED = "UNBUDGETED"
-    BOTH = "BOTH"
+    BUDGETED = "budgeted"
+    UNBUDGETED = "unbudgeted"
+    BOTH = "both"
 
 class BudgetStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    PAID = "PAID"
-    CANCELLED = "CANCELLED"
+    PENDING = "pending"
+    PAID = "paid"
+    CANCELLED = "cancelled"
 
 class IncomeBudgetStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    COLLECTED = "COLLECTED"
-    CANCELLED = "CANCELLED"
+    PENDING = "pending"
+    COLLECTED = "collected"
+    CANCELLED = "cancelled"
 
 class TransactionType(str, enum.Enum):
-    INCOME = "INCOME"
-    EXPENSE = "EXPENSE"
+    INCOME = "income"
+    EXPENSE = "expense"
 
 class ExpenseOrigin(str, enum.Enum):
-    BUDGETED = "BUDGETED"
-    UNBUDGETED = "UNBUDGETED"
+    BUDGETED = "budgeted"
+    UNBUDGETED = "unbudgeted"
 
 class PaymentMethod(str, enum.Enum):
-    CASH = "CASH"
-    TRANSFER = "TRANSFER"
-    CHECK = "CHECK"
-    CARD = "CARD"
-    OTHER = "OTHER"
-class PaymentMethodType(str, enum.Enum):
-    BANK = "BANK"
-    CASH = "CASH"
-    CARD = "CARD"
-    OTHER = "OTHER"
+    CASH = "cash"
+    TRANSFER = "transfer"
+    CHECK = "check"
+    CARD = "card"
+    OTHER = "other"
 
-class DebtStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    PAID = "PAID"
-    CANCELLED = "CANCELLED"
-    ACTIVE = "ACTIVE"
-    PARTIAL = "PARTIAL"
-
-class InterestType(str, enum.Enum):
-    FIXED = "FIXED"
-    VARIABLE = "VARIABLE"
-    NONE = "NONE"
-    FIXED_RATE = "FIXED_RATE"
+class RecipientType(str, enum.Enum):
+    SUPPLIER = "supplier"
+    EMPLOYEE = "employee"
+    PARTNER = "partner"
 
 class CommissionStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    PAID = "PAID"
+    PENDING = "pending"
+    PAID = "paid"
+    CANCELLED = "cancelled"

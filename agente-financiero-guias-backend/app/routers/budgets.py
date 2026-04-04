@@ -8,34 +8,29 @@ from app.models.expense_budget import ExpenseBudget
 from app.models.transaction import Transaction
 from app.utils.enums import BudgetStatus, TransactionType
 
-from app.schemas.expense_budget import ExpenseBudgetCreate, ExpenseBudgetResponse
-
 router = APIRouter(prefix="/budgets", tags=["Expense Budgets"])
 
-@router.post("", response_model=ExpenseBudgetResponse)
-async def create_budget(budget_in: ExpenseBudgetCreate, db: AsyncSession = Depends(get_db)):
-    # We now use Pydantic schema which parses strings to UUID/Date automatically
-    budget = ExpenseBudget(**budget_in.model_dump())
+@router.post("/")
+async def create_budget(budget_in: dict, db: AsyncSession = Depends(get_db)):
+    # Simple dict for now, should use schema
+    budget = ExpenseBudget(**budget_in)
     db.add(budget)
     await db.commit()
     await db.refresh(budget)
     return budget
 
-@router.get("", response_model=list[ExpenseBudgetResponse])
+@router.get("/")
 async def list_budgets(
     company_id: UUID, 
-    month: int | None = Query(None, ge=1, le=12), 
-    year: int | None = Query(None), 
+    month: int = Query(..., ge=1, le=12), 
+    year: int = Query(...), 
     status: BudgetStatus | None = None,
     db: AsyncSession = Depends(get_db)
 ):
-    actual_month = month or date.today().month
-    actual_year = year or date.today().year
-
     query = select(ExpenseBudget).where(
         ExpenseBudget.company_id == company_id,
-        ExpenseBudget.period_month == actual_month,
-        ExpenseBudget.period_year == actual_year
+        ExpenseBudget.period_month == month,
+        ExpenseBudget.period_year == year
     )
     if status:
         query = query.where(ExpenseBudget.status == status)

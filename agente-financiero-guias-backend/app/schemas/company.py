@@ -21,8 +21,8 @@ class CompanyUpdate(BaseModel):
     afip_cert: str | None = None
     afip_key: str | None = None
     afip_point_of_sale: int | None = None
-    imagen: str | None = None
     is_active: bool | None = None
+    imagen: str | None = None
 
 class CompanyResponse(CompanyBase):
     id: UUID

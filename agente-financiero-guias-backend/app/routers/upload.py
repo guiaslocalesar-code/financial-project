@@ -1,21 +1,20 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-import shutil
-import os
-import uuid
-from typing import List
-
 from app.services.storage_service import storage_service
 
 router = APIRouter(
     prefix="/upload",
-    tags=["upload"]
+    tags=["Uploads"]
 )
 
 @router.post("", response_model=dict)
 async def upload_file(file: UploadFile = File(...)):
-    # Validate file type
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="El archivo debe ser una imagen.")
+    # Validate file type (allowing more than just images for invoices/receipts)
+    allowed_types = ["image/jpeg", "image/png", "application/pdf"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Tipo de archivo no permitido: {file.content_type}. Solo se permiten imágenes y PDFs."
+        )
     
     try:
         url = await storage_service.upload(file)

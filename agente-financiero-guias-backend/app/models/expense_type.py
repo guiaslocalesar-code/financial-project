@@ -11,7 +11,7 @@ class ExpenseType(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    applies_to: Mapped[AppliesTo] = mapped_column(SQLEnum(AppliesTo, name="appliesto"), default=AppliesTo.BOTH)
+    applies_to: Mapped[AppliesTo] = mapped_column(SQLEnum(AppliesTo), default=AppliesTo.BOTH)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

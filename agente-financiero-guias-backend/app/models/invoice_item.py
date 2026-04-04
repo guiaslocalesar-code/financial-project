@@ -9,7 +9,7 @@ class InvoiceItem(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     invoice_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("invoices.id"), nullable=False)
-    service_id: Mapped[str] = mapped_column(ForeignKey("services.id"), nullable=True)
+    service_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("services.id"), nullable=True)
     description: Mapped[str] = mapped_column(String, nullable=False)
     quantity: Mapped[float] = mapped_column(Numeric(10, 2), default=1.0)
     unit_price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)

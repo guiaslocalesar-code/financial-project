@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Optional, Protocol
+from typing import Protocol
 from fastapi import UploadFile
 from app.config import settings
 
@@ -20,7 +20,7 @@ class LocalStorageProvider:
         os.makedirs(os.path.join(self.base_dir, "uploads"), exist_ok=True)
 
     async def upload_file(self, file: UploadFile, folder: str = "uploads") -> str:
-        ext = os.path.splitext(file.filename)[1]
+        ext = os.path.splitext(file.filename or "")[1]
         filename = f"{uuid.uuid4()}{ext}"
         relative_path = os.path.join(folder, filename)
         full_path = os.path.join(self.base_dir, relative_path)
@@ -43,7 +43,7 @@ class SupabaseStorageProvider:
         self.bucket = bucket
 
     async def upload_file(self, file: UploadFile, folder: str = "uploads") -> str:
-        ext = os.path.splitext(file.filename)[1]
+        ext = os.path.splitext(file.filename or "")[1]
         filename = f"{folder}/{uuid.uuid4()}{ext}"
         
         content = await file.read()
@@ -61,12 +61,18 @@ class SupabaseStorageProvider:
 
 class StorageService:
     def __init__(self):
-        if settings.STORAGE_BACKEND == "supabase" and settings.SUPABASE_URL and settings.SUPABASE_KEY:
+        # We need to ensure settings has these attributes
+        storage_backend = getattr(settings, "STORAGE_BACKEND", "local")
+        supabase_url = getattr(settings, "SUPABASE_URL", None)
+        supabase_key = getattr(settings, "SUPABASE_KEY", None)
+        supabase_bucket = getattr(settings, "SUPABASE_BUCKET", "uploads")
+
+        if storage_backend == "supabase" and supabase_url and supabase_key:
             try:
                 self.provider: StorageProvider = SupabaseStorageProvider(
-                    settings.SUPABASE_URL, 
-                    settings.SUPABASE_KEY, 
-                    settings.SUPABASE_BUCKET
+                    supabase_url, 
+                    supabase_key, 
+                    supabase_bucket
                 )
                 return
             except (ImportError, Exception) as e:

@@ -9,10 +9,11 @@ python-dotenv
 python-jose[cryptography]
 passlib[bcrypt]
 cryptography
-# pyafipws
+git+https://github.com/reingart/pyafipws.git@py3k
 httpx
 pytest
 pytest-asyncio
 python-multipart
 fernet
-supabase
+google-cloud-storage
+python-dateutil
