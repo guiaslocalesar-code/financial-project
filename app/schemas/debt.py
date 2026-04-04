@@ -1,67 +1,51 @@
 from pydantic import BaseModel, ConfigDict
-from decimal import Decimal
-from datetime import date
-from typing import List, Optional
-import uuid
+from uuid import UUID
+from datetime import datetime, date
 
-class DebtCreate(BaseModel):
-    payment_method_id: str
-    description: str
-    original_amount: Decimal
-    installments: int = 1
-    interest_type: str = 'none'   # 'none' o 'fixed_rate'
-    interest_rate: Decimal = 0    # % mensual
-    first_due_date: date
-
-class DebtInstallmentResponse(BaseModel):
-    id: uuid.UUID
+class DebtInstallmentBase(BaseModel):
     installment_number: int
+    amount: float
     due_date: date
-    amount: Decimal
-    capital_amount: Decimal
-    interest_amount: Decimal
-    status: str
-    transaction_id: Optional[uuid.UUID] = None
+    status: str = "PENDING"
+    capital_amount: float | None = None
+    interest_amount: float | None = None
+
+class DebtInstallmentCreate(DebtInstallmentBase):
+    debt_id: UUID
+
+class DebtInstallmentResponse(DebtInstallmentBase):
+    id: UUID
+    debt_id: UUID
+    transaction_id: UUID | None = None
+    created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
-class DebtResponse(BaseModel):
-    id: uuid.UUID
+class DebtBase(BaseModel):
     description: str
-    original_amount: Decimal
-    interest_rate: Decimal
-    interest_total: Decimal
-    total_amount: Decimal
-    installments: int
-    installment_amount: Decimal
+    original_amount: float
+    interest_type: str | None = None
+    interest_rate: float | None = None
+    interest_total: float | None = None
+    total_amount: float
+    installments: int = 1
+    installment_amount: float | None = None
+    first_due_date: date | None = None
+
+class DebtCreate(DebtBase):
+    company_id: UUID
+
+class DebtUpdate(BaseModel):
+    description: str | None = None
+    status: str | None = None
+
+class DebtResponse(DebtBase):
+    id: UUID
+    company_id: UUID
     status: str
-    installments_detail: List[DebtInstallmentResponse]
-
-    model_config = ConfigDict(from_attributes=True)
-
-class CashflowProjectionDetail(BaseModel):
-    mes: str
-    ingresos_esperados: Decimal
-    egresos_presupuestados: Decimal
-    cuotas_a_pagar: Decimal
-    cuotas_capital: Decimal
-    cuotas_interes: Decimal
-    flujo_neto: Decimal
-
-class DebtSummaryResponse(BaseModel):
-    deuda_total_activa: Decimal
-    total_pagado: Decimal
-    total_pendiente: Decimal
-    intereses_pagados: Decimal
-    intereses_pendientes: Decimal
-    proximas_cuotas: List[DebtInstallmentResponse]
-
-class PaymentMethodResponse(BaseModel):
-    id: str
-    name: str
-    type: str
-    bank: Optional[str] = None
-    is_credit: bool
-    is_active: bool
+    created_at: datetime
+    updated_at: datetime | None = None
+    debt_installments: list[DebtInstallmentResponse] = []
 
     model_config = ConfigDict(from_attributes=True)

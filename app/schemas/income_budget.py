@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from uuid import UUID
 from datetime import datetime, date
 from typing import Literal
@@ -15,9 +15,15 @@ class IncomeBudgetBase(BaseModel):
     iva_rate: float | None = 0.0
     iva_amount: float | None = 0.0
     is_recurring: bool = True
+    notes: str | None = None
 
 class IncomeBudgetCreate(IncomeBudgetBase):
     pass
+
+class IncomeBudgetGenerate(BaseModel):
+    company_id: UUID
+    month: int
+    year: int
 
 class IncomeBudgetUpdate(BaseModel):
     budgeted_amount: float | None = None
@@ -30,8 +36,11 @@ class IncomeBudgetUpdate(BaseModel):
     status: Literal["pending", "collected", "cancelled"] | None = None
 
 class IncomeBudgetCollect(BaseModel):
-    actual_amount: float | None = None   # Si None, usa budgeted_amount
-    payment_method: str = "transfer"
+    actual_amount_collected: float | None = None
+    payment_method_id: str | None = None
+    transaction_date: str | None = None
+    actual_amount: float | None = None   # Legacy field
+    payment_method: str = "transfer"      # Legacy field
 
 class IncomeBudgetResponse(IncomeBudgetBase):
     id: UUID
@@ -40,6 +49,18 @@ class IncomeBudgetResponse(IncomeBudgetBase):
     transaction_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
+
+    # Frontend-compatible aliases (computed)
+    amount: float = 0.0
+    description: str | None = None
+    client_name: str | None = None
+    service_name: str | None = None
+
+    @model_validator(mode='after')
+    def compute_aliases(self) -> 'IncomeBudgetResponse':
+        self.amount = self.budgeted_amount
+        self.description = self.notes
+        return self
 
     model_config = ConfigDict(from_attributes=True)
 

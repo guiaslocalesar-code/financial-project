@@ -5,7 +5,8 @@ from app.routers import (
     companies, clients, services, client_services, 
     expenses, budgets, transactions, 
     dashboard, income_budgets, debts,
-    auth, users, commissions
+    auth, users, commissions,
+    upload, payment_methods
 )
 from afip_integration.routers import invoices as afip_invoices
 
@@ -41,6 +42,8 @@ app.include_router(debts.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(commissions.router, prefix="/api/v1")
+app.include_router(upload.router, prefix="/api/v1")
+app.include_router(payment_methods.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
