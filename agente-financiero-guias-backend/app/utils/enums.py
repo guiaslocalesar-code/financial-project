@@ -17,9 +17,9 @@ class InvoiceType(str, enum.Enum):
     C = "C"
 
 class InvoiceStatus(str, enum.Enum):
-    DRAFT = "draft"
-    EMITTED = "emitted"
-    CANCELLED = "cancelled"
+    DRAFT = "DRAFT"
+    EMITTED = "EMITTED"
+    CANCELLED = "CANCELLED"
 
 class AppliesTo(str, enum.Enum):
     BUDGETED = "budgeted"
@@ -27,18 +27,18 @@ class AppliesTo(str, enum.Enum):
     BOTH = "both"
 
 class BudgetStatus(str, enum.Enum):
-    PENDING = "pending"
-    PAID = "paid"
-    CANCELLED = "cancelled"
+    PENDING = "PENDING"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
 
 class IncomeBudgetStatus(str, enum.Enum):
-    PENDING = "pending"
-    COLLECTED = "collected"
-    CANCELLED = "cancelled"
+    PENDING = "PENDING"
+    COLLECTED = "COLLECTED"
+    CANCELLED = "CANCELLED"
 
 class TransactionType(str, enum.Enum):
-    INCOME = "income"
-    EXPENSE = "expense"
+    INCOME = "INCOME"
+    EXPENSE = "EXPENSE"
 
 class ExpenseOrigin(str, enum.Enum):
     BUDGETED = "budgeted"
@@ -57,6 +57,6 @@ class RecipientType(str, enum.Enum):
     PARTNER = "partner"
 
 class CommissionStatus(str, enum.Enum):
-    PENDING = "pending"
-    PAID = "paid"
-    CANCELLED = "cancelled"
+    PENDING = "PENDING"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
