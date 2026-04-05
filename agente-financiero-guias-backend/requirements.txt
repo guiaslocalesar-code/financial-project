@@ -11,6 +11,7 @@ passlib[bcrypt]
 cryptography
 git+https://github.com/reingart/pyafipws.git
 httpx
+reportlab
 pytest
 pytest-asyncio
 python-multipart
