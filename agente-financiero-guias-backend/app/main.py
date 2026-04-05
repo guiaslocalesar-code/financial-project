@@ -9,7 +9,13 @@ from app.routers import (
     auth, users, commissions,
     upload, payment_methods
 )
-from afip_integration.routers import invoices as afip_invoices
+_has_afip = False
+try:
+    from afip_integration.routers import invoices as afip_invoices
+    _has_afip = True
+except Exception as e:
+    import logging
+    logging.error(f"Failed to load AFIP module: {e}")
 
 app = FastAPI(
     title="Marketing Agency Financial API",
@@ -43,7 +49,8 @@ app.include_router(client_services.router, prefix="/api/v1")
 app.include_router(expenses.router, prefix="/api/v1")
 app.include_router(budgets.router, prefix="/api/v1")
 app.include_router(income_budgets.router, prefix="/api/v1")
-app.include_router(afip_invoices.router, prefix="/api/v1")
+if _has_afip:
+    app.include_router(afip_invoices.router, prefix="/api/v1")
 app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(debts.router, prefix="/api/v1")

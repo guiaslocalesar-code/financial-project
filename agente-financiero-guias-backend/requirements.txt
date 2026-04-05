@@ -9,7 +9,7 @@ python-dotenv
 python-jose[cryptography]
 passlib[bcrypt]
 cryptography
-git+https://github.com/reingart/pyafipws.git@py3k
+git+https://github.com/reingart/pyafipws.git
 httpx
 pytest
 pytest-asyncio

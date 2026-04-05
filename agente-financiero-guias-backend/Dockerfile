@@ -13,6 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     git \
+    swig \
+    libssl-dev \
+    python3-dev \
+    libffi-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
