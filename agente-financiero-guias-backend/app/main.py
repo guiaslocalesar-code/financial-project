@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.routers import (
     companies, clients, services, client_services, 
@@ -8,7 +9,11 @@ from app.routers import (
     auth, users, commissions,
     upload, payment_methods
 )
-from afip_integration.routers import invoices as afip_invoices
+try:
+    from afip_integration.routers import invoices as afip_invoices
+    _has_afip = True
+except ImportError:
+    _has_afip = False
 
 app = FastAPI(
     title="Marketing Agency Financial API",
@@ -16,6 +21,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     openapi_url="/openapi.json",
+    redirect_slashes=False,
 )
 
 # CORS configuration
@@ -27,6 +33,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Static files for uploads
+try:
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+except RuntimeError:
+    pass  # static dir may not exist in container
+
 # Include routers
 app.include_router(companies.router, prefix="/api/v1")
 app.include_router(clients.router, prefix="/api/v1")
@@ -35,7 +47,8 @@ app.include_router(client_services.router, prefix="/api/v1")
 app.include_router(expenses.router, prefix="/api/v1")
 app.include_router(budgets.router, prefix="/api/v1")
 app.include_router(income_budgets.router, prefix="/api/v1")
-app.include_router(afip_invoices.router, prefix="/api/v1")
+if _has_afip:
+    app.include_router(afip_invoices.router, prefix="/api/v1")
 app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(debts.router, prefix="/api/v1")
