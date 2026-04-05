@@ -104,8 +104,7 @@ async def _enrich_commissions(
 
 
 # ── Commission Recipients CRUD ─────────────────────────────────────────────────
-
-@router.post("/commission-recipients", response_model=CommissionRecipientResponse)
+@router.post("/commissions/recipients", response_model=CommissionRecipientResponse)
 async def create_recipient(
     body: CommissionRecipientCreate,
     db: AsyncSession = Depends(get_db),
@@ -117,7 +116,7 @@ async def create_recipient(
     return recipient
 
 
-@router.get("/commission-recipients", response_model=List[CommissionRecipientResponse])
+@router.get("/commissions/recipients", response_model=List[CommissionRecipientResponse])
 async def list_recipients(
     company_id: UUID,
     only_active: bool = True,
@@ -131,7 +130,7 @@ async def list_recipients(
 
 
 @router.patch(
-    "/commission-recipients/{recipient_id}",
+    "/commissions/recipients/{recipient_id}",
     response_model=CommissionRecipientResponse,
 )
 async def update_recipient(
@@ -152,7 +151,7 @@ async def update_recipient(
     return recipient
 
 
-@router.delete("/commission-recipients/{recipient_id}", status_code=204)
+@router.delete("/commissions/recipients/{recipient_id}", status_code=204)
 async def delete_recipient(
     recipient_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -168,8 +167,7 @@ async def delete_recipient(
 
 
 # ── Commission Rules CRUD ──────────────────────────────────────────────────────
-
-@router.post("/commission-rules", response_model=CommissionRuleResponse)
+@router.post("/commissions/rules", response_model=CommissionRuleResponse)
 async def create_rule(body: CommissionRuleCreate, db: AsyncSession = Depends(get_db)):
     # Verificar que el recipient exista
     r = await db.execute(
@@ -191,7 +189,7 @@ async def create_rule(body: CommissionRuleCreate, db: AsyncSession = Depends(get
         raise HTTPException(500, f"Error interno: {err}")
 
 
-@router.get("/commission-rules", response_model=List[CommissionRuleResponse])
+@router.get("/commissions/rules", response_model=List[CommissionRuleResponse])
 async def list_rules(
     company_id: UUID,
     only_active: bool = True,
@@ -204,7 +202,7 @@ async def list_rules(
     return result.scalars().all()
 
 
-@router.patch("/commission-rules/{rule_id}", response_model=CommissionRuleResponse)
+@router.patch("/commissions/rules/{rule_id}", response_model=CommissionRuleResponse)
 async def update_rule(
     rule_id: UUID,
     body: CommissionRuleUpdate,
@@ -221,7 +219,7 @@ async def update_rule(
     return rule
 
 
-@router.delete("/commission-rules/{rule_id}", status_code=204)
+@router.delete("/commissions/rules/{rule_id}", status_code=204)
 async def delete_rule(rule_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CommissionRule).where(CommissionRule.id == rule_id))
     rule = result.scalar_one_or_none()
