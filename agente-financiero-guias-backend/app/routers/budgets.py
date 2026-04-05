@@ -10,7 +10,7 @@ from app.utils.enums import BudgetStatus, TransactionType
 
 router = APIRouter(prefix="/budgets", tags=["Expense Budgets"])
 
-@router.post("/")
+@router.post("")
 async def create_budget(budget_in: dict, db: AsyncSession = Depends(get_db)):
     # Simple dict for now, should use schema
     budget = ExpenseBudget(**budget_in)
@@ -19,7 +19,7 @@ async def create_budget(budget_in: dict, db: AsyncSession = Depends(get_db)):
     await db.refresh(budget)
     return budget
 
-@router.get("/")
+@router.get("")
 async def list_budgets(
     company_id: UUID, 
     month: int = Query(..., ge=1, le=12), 
