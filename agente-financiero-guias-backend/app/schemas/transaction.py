@@ -5,10 +5,10 @@ from app.utils.enums import TransactionType, ExpenseOrigin
 
 class TransactionBase(BaseModel):
     company_id: UUID
-    client_id: UUID | None = None
+    client_id: str | None = None
     invoice_id: UUID | None = None
     budget_id: UUID | None = None
-    service_id: UUID | None = None
+    service_id: str | None = None
     expense_type_id: UUID | None = None
     expense_category_id: UUID | None = None
     type: TransactionType

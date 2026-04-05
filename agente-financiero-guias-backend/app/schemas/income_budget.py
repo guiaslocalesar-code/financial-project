@@ -5,8 +5,8 @@ from typing import Literal
 
 class IncomeBudgetBase(BaseModel):
     company_id: UUID
-    client_id: UUID
-    service_id: UUID
+    client_id: str
+    service_id: str
     budgeted_amount: float
     planned_date: date
     period_month: int

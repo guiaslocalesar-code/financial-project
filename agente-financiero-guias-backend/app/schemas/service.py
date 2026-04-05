@@ -16,7 +16,7 @@ class ServiceUpdate(BaseModel):
     is_active: bool | None = None
 
 class ServiceResponse(ServiceBase):
-    id: UUID
+    id: str
     is_active: bool
     created_at: datetime
     updated_at: datetime

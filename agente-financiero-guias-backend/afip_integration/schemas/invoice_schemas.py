@@ -5,7 +5,7 @@ from uuid import UUID
 from app.utils.enums import InvoiceType, InvoiceStatus
 
 class InvoiceItemSchema(BaseModel):
-    service_id: Optional[UUID] = None
+    service_id: Optional[str] = None
     description: str
     quantity: float = Field(default=1.0)
     unit_price: float
