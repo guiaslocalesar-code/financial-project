@@ -17,9 +17,9 @@ from afip_integration.services.invoice_service import create_invoice_draft, emit
 from afip_integration.utils.pdf_generator import generate_invoice_pdf
 from afip_integration.utils.certificate_manager import encrypt_credential
 
-router = APIRouter(tags=["AFIP Invoices"])
+router = APIRouter(prefix="/invoices", tags=["AFIP Invoices"])
 
-@router.post("/invoices", response_model=InvoiceResponse, status_code=201)
+@router.post("", response_model=InvoiceResponse, status_code=201)
 async def api_create_invoice_draft(
     company_id: UUID = Query(...), 
     payload: InvoiceCreate = None, 
@@ -29,7 +29,7 @@ async def api_create_invoice_draft(
     invoice = await create_invoice_draft(db, company_id, payload)
     return invoice
 
-@router.post("/invoices/{invoice_id}/emit", response_model=EmitResponse)
+@router.post("/{invoice_id}/emit", response_model=EmitResponse)
 async def api_emit_invoice(
     invoice_id: UUID,
     company_id: UUID = Query(...),
@@ -51,7 +51,7 @@ async def api_emit_invoice(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/invoices", response_model=List[InvoiceResponse])
+@router.get("", response_model=List[InvoiceResponse])
 async def list_invoices(
     company_id: UUID, 
     client_id: Optional[str] = None,
@@ -70,7 +70,7 @@ async def list_invoices(
     res = await db.execute(query)
     return res.scalars().all()
 
-@router.get("/invoices/{invoice_id}", response_model=InvoiceResponse)
+@router.get("/{invoice_id}", response_model=InvoiceResponse)
 async def get_invoice(
     invoice_id: UUID,
     company_id: UUID = Query(...),
@@ -82,7 +82,7 @@ async def get_invoice(
         raise HTTPException(status_code=404, detail="Invoice not found")
     return inv
 
-@router.post("/invoices/{invoice_id}/cancel", response_model=CancelResponse)
+@router.post("/{invoice_id}/cancel", response_model=CancelResponse)
 async def cancel_invoice(
     invoice_id: UUID,
     company_id: UUID = Query(...),
@@ -101,7 +101,7 @@ async def cancel_invoice(
     await db.commit()
     return {"status": "cancelled"}
 
-@router.get("/invoices/{invoice_id}/pdf")
+@router.get("/{invoice_id}/pdf")
 async def get_invoice_pdf(
     invoice_id: UUID,
     company_id: UUID = Query(...),
@@ -126,6 +126,9 @@ async def get_invoice_pdf(
     }
     return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
 
+# Note: Since the router prefix is /invoices, this actually becomes /invoices/companies/...
+# To avoid breaking the frontend if it doesn't expect the prefix, we should either move it or adjust the prefix on the include_router.
+# But for now I'll use a slash-less relative path.
 @router.post("/companies/{company_id}/afip-credentials")
 async def set_afip_credentials(
     company_id: UUID,

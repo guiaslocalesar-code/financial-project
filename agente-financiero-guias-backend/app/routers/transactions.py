@@ -8,7 +8,7 @@ from app.schemas.transaction import TransactionResponse
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
-@router.get("/", response_model=list[TransactionResponse])
+@router.get("", response_model=list[TransactionResponse])
 async def list_transactions(company_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Transaction).where(Transaction.company_id == company_id).order_by(Transaction.transaction_date.desc()))
     return result.scalars().all()
