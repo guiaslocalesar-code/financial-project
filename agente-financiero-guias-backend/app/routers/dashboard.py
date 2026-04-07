@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from datetime import datetime, date
 from calendar import monthrange
+from typing import Optional
 from app.database import get_db
 from app.services.dashboard_service import dashboard_service
 
@@ -59,9 +60,12 @@ async def get_commissions_summary(
     company_id: UUID,
     month: int = Query(datetime.now().month, ge=1, le=12),
     year: int = Query(datetime.now().year),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    start_date, end_date = _month_range(month, year)
+    if not (start_date and end_date):
+        start_date, end_date = _month_range(month, year)
     return await dashboard_service.get_commissions_summary(company_id, start_date, end_date, db)
 
 @router.get("/all")
