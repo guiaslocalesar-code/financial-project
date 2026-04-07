@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date as py_date
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, Date
 from uuid import UUID
 from app.models.transaction import Transaction
 from app.models.invoice_item import InvoiceItem
@@ -11,7 +11,7 @@ from app.models.commission_recipient import CommissionRecipient
 from app.utils.enums import TransactionType, BudgetStatus, CommissionStatus
 
 class DashboardService:
-    async def get_summary(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
+    async def get_summary(self, company_id: UUID, start_date: py_date, end_date: py_date, db: AsyncSession):
         """
         Returns a financial summary for a date range.
         Note: The frontend might still send month/year, 
@@ -62,15 +62,15 @@ class DashboardService:
         return {
             "total_income": total_income,
             "total_expenses": total_expenses,
-            "total_commissions_pending": comm_summary["total_pending"],
-            "total_commissions_paid": comm_summary["total_paid"],
-            "total_commissions": comm_summary["total_pending"] + comm_summary["total_paid"],
+            "total_commissions_pending": comm_summary["total_pendiente"],
+            "total_commissions_paid": comm_summary["total_pagado"],
+            "total_commissions": comm_summary["total_pendiente"] + comm_summary["total_pagado"],
             "balance": balance,
             "pending_to_pay": pending_to_pay,
             "commissions_summary": comm_summary
         }
 
-    async def get_profitability(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
+    async def get_profitability(self, company_id: UUID, start_date: py_date, end_date: py_date, db: AsyncSession):
         # 1. Income by service (joining invoices)
         from app.models.invoice import Invoice
         income_query = select(InvoiceItem.service_id, func.sum(InvoiceItem.subtotal).label("income")) \
@@ -115,7 +115,7 @@ class DashboardService:
         
         return profitability
 
-    async def get_commissions_summary(self, company_id: UUID, start_date: date, end_date: date, db: AsyncSession):
+    async def get_commissions_summary(self, company_id: UUID, start_date: py_date, end_date: py_date, db: AsyncSession):
         total_pending = 0.0
         total_paid = 0.0
         recipient_count = 0
@@ -127,8 +127,8 @@ class DashboardService:
             .where(
                 Commission.company_id == company_id,
                 Commission.status == CommissionStatus.PENDING,
-                func.cast(Commission.created_at, date) >= start_date,
-                func.cast(Commission.created_at, date) <= end_date
+                func.cast(Commission.created_at, Date) >= start_date,
+                func.cast(Commission.created_at, Date) <= end_date
             )
         )
         total_pending = float(pending_res.scalar() or 0.0)
@@ -140,8 +140,8 @@ class DashboardService:
                 Commission.company_id == company_id,
                 Commission.status == CommissionStatus.PAID,
                 # For PAID, we might want to filter by update_at or transaction date
-                func.cast(Commission.created_at, date) >= start_date,
-                func.cast(Commission.created_at, date) <= end_date
+                func.cast(Commission.created_at, Date) >= start_date,
+                func.cast(Commission.created_at, Date) <= end_date
             )
         )
         total_paid = float(paid_res.scalar() or 0.0)
@@ -172,8 +172,8 @@ class DashboardService:
         ]
 
         return {
-            "total_pending": total_pending,
-            "total_paid": total_paid,
+            "total_pendiente": total_pending,
+            "total_pagado": total_paid,
             "recipient_count": recipient_count,
             "top_recipients": top_recipients
         }

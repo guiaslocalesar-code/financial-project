@@ -158,4 +158,5 @@ class TopRecipient(BaseModel):
 class CommissionsDashboard(BaseModel):
     total_pendiente: float
     total_pagado: float
+    recipient_count: int = 0
     top_recipients: List[TopRecipient]
