@@ -13,6 +13,7 @@ Endpoints:
 """
 
 import logging
+from datetime import date, datetime
 from typing import List, Optional
 from uuid import UUID
 
@@ -236,6 +237,8 @@ async def list_commissions(
     company_id: UUID,
     status: Optional[CommissionStatus] = Query(None),
     recipient_id: Optional[UUID] = Query(None),
+    month: Optional[int] = Query(None, ge=1, le=12),
+    year: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -250,6 +253,11 @@ async def list_commissions(
 
     if recipient_id:
         q = q.where(Commission.recipient_id == recipient_id)
+
+    if month:
+        q = q.where(func.extract('month', Commission.created_at) == month)
+    if year:
+        q = q.where(func.extract('year', Commission.created_at) == year)
 
     q = q.order_by(Commission.created_at.desc())
 
@@ -391,82 +399,24 @@ async def get_recipient_summary(
 @router.get("/dashboard/commissions-summary", response_model=CommissionsDashboard)
 async def get_commissions_summary(
     company_id: UUID,
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Resumen de comisiones para el dashboard:
-      · total_pendiente  — suma de comisiones PENDING
-      · total_pagado     — suma de comisiones PAID
-      · top_recipients   — hasta 5 destinatarios ordenados por total
+    Resumen de comisiones para el dashboard.
+    Mapea a la lógica del dashboard_service para consistencia.
     """
-    # Totales globales por estado con una sola query
-    totals_res = await db.execute(
-        select(
-            Commission.status,
-            func.sum(Commission.commission_amount).label("total"),
-        )
-        .where(Commission.company_id == company_id)
-        .group_by(Commission.status)
-    )
-    total_pending = 0.0
-    total_paid = 0.0
-    for row in totals_res:
-        if row.status == CommissionStatus.PENDING:
-            total_pending = float(row.total or 0)
-        elif row.status == CommissionStatus.PAID:
-            total_paid = float(row.total or 0)
-
-    # Top recipients — una sola query con GROUP BY
-    top_res = await db.execute(
-        select(
-            Commission.recipient_id,
-            Commission.status,
-            func.sum(Commission.commission_amount).label("total"),
-        )
-        .where(Commission.company_id == company_id)
-        .group_by(Commission.recipient_id, Commission.status)
-    )
-
-    # Agrupar por recipient_id
-    from collections import defaultdict
-    by_recipient: dict[UUID, dict] = defaultdict(
-        lambda: {"total": 0.0, "pending": 0.0, "paid": 0.0}
-    )
-    for row in top_res:
-        rid = row.recipient_id
-        by_recipient[rid]["total"] += float(row.total or 0)
-        if row.status == CommissionStatus.PENDING:
-            by_recipient[rid]["pending"] += float(row.total or 0)
-        elif row.status == CommissionStatus.PAID:
-            by_recipient[rid]["paid"] += float(row.total or 0)
-
-    # Batch fetch de nombres de recipients
-    if by_recipient:
-        names_res = await db.execute(
-            select(CommissionRecipient.id, CommissionRecipient.name)
-            .where(CommissionRecipient.id.in_(by_recipient.keys()))
-        )
-        names_map = {r.id: r.name for r in names_res}
-    else:
-        names_map = {}
-
-    # Construir lista ordenada por total desc
-    top_list: list[TopRecipient] = []
-    for rid, data in by_recipient.items():
-        top_list.append(
-            TopRecipient(
-                recipient_id=rid,
-                name=names_map.get(rid, "Desconocido"),
-                total_comisiones=data["total"],
-                total_pendiente=data["pending"],
-                total_pagado=data["paid"],
-            )
-        )
-
-    top_list.sort(key=lambda x: x.total_comisiones, reverse=True)
-
-    return CommissionsDashboard(
-        total_pendiente=total_pending,
-        total_pagado=total_paid,
-        top_recipients=top_list[:5],
-    )
+    from app.services.dashboard_service import dashboard_service
+    from datetime import date as py_date, timedelta
+    
+    # Defaults a mes actual si no hay fechas
+    if not start_date:
+        start_date = py_date.today().replace(day=1)
+    if not end_date:
+        # Calcular fin de mes
+        next_month = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+        end_date = next_month - timedelta(days=1)
+        
+    summary = await dashboard_service.get_commissions_summary(company_id, start_date, end_date, db)
+    return summary
